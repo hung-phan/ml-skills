@@ -1,46 +1,17 @@
 {
   "name": "ml-skills",
-  "id": "ml-skills",
   "owner": {
     "name": "hung-phan"
   },
   "metadata": {
-    "description": "Comprehensive ML skills library — architectures, training, inference, GPU kernels, and data prep. Covers PyTorch, transformers, LLM fine-tuning, Triton kernels, and more.",
+    "description": "Comprehensive ML skills library — architectures, libraries, training, inference, GPU kernels, and data prep.",
     "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "ml-skills",
       "source": "./",
-      "description": "Comprehensive ML skills library — architectures, training, inference, GPU kernels, and data prep. Covers PyTorch, transformers, LLM fine-tuning, Triton kernels, and more.",
-      "version": "0.1.0",
-      "author": {
-        "name": "hung-phan"
-      },
-      "license": "MIT",
-      "keywords": [
-        "skills",
-        "machine-learning",
-        "pytorch",
-        "llm",
-        "fine-tuning",
-        "transformers",
-        "grpo",
-        "rlhf",
-        "triton",
-        "tilelang",
-        "gpu-kernels",
-        "rag",
-        "embeddings",
-        "diffusion",
-        "moe",
-        "quantization",
-        "unsloth",
-        "dspy",
-        "vllm",
-        "sglang"
-      ],
-      "category": "ml"
+      "description": "ML architectures, libraries, training, data prep, GPU kernels, and the meta skill-acquisition workflow"
     }
   ]
 }

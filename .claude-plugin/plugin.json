@@ -1,9 +1,9 @@
 {
   "name": "ml-skills",
-  "description": "Comprehensive ML skills library — architectures, training, inference, GPU kernels, and data prep. Covers PyTorch, transformers, LLM fine-tuning, Triton kernels, and more.",
+  "description": "Comprehensive ML skills library — architectures, libraries, training, inference, GPU kernels, and data prep. Covers PyTorch, transformers, LLM fine-tuning, Triton kernels, and more.",
   "version": "0.1.0",
   "author": {
-    "name": "phahng"
+    "name": "hung-phan"
   },
   "license": "MIT",
   "keywords": [
@@ -28,5 +28,7 @@
     "vllm",
     "sglang"
   ],
-  "skills": ["./skills/"]
+  "skills": [
+    "./skills"
+  ]
 }
