@@ -11,6 +11,7 @@ description: ML library skills — data manipulation, visualization, deep learni
 | [huggingface](huggingface/) | Transformers, datasets, tokenizers, PEFT, Accelerate, Hub |
 | [keras](keras/) | Neural networks, Sequential/Functional API, multi-backend (JAX, PyTorch, TF) |
 | [litellm](litellm/) | Unified LLM API — 100+ providers, routing, fallbacks, caching, proxy |
+| [nemo](nemo/) | NVIDIA NeMo — Megatron-Core 5D parallelism, FP8/MXFP8, MoE Parallel Folding, NIM/TRT-LLM export |
 | [numpy](numpy/) | Arrays, broadcasting, linear algebra, vectorization, numerical computing |
 | [pandas](pandas/) | DataFrames, groupby, merge, pivot, read_csv, parquet, memory optimization |
 | [plotly](plotly/) | Interactive charts, 3D plots, animations, Dash dashboards |
@@ -36,6 +37,7 @@ description: ML library skills — data manipulation, visualization, deep learni
 | Quick prototyping DL | keras |
 | Research / custom DL | pytorch |
 | Distribute across cluster | ray |
+| Multi-node NVIDIA training (MoE, FP8, NIM/TRT-LLM target) | nemo |
 | Classical ML pipelines | scikit-learn |
 | Tabular data, structured | xgboost |
 | Pretrained model fine-tuning | huggingface |
