@@ -10,15 +10,7 @@ Register as a plugin marketplace, then install:
 
 ```
 /plugin marketplace add hung-phan/ml-skills
-/plugin install ml-skills@hung-phan/ml-skills
-```
-
-Or install individual skill groups:
-
-```
-/plugin install ml-architectures@hung-phan/ml-skills
-/plugin install ml-training@hung-phan/ml-skills
-/plugin install gpu-lang@hung-phan/ml-skills
+/plugin install ml-skills@ml-skills
 ```
 
 ### Local install (for development)
