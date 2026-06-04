@@ -257,7 +257,7 @@ class MoELayer(nn.Module):
 - [Mixtral of Experts](https://arxiv.org/abs/2401.04088) — Jiang et al., 2024
 - [Mixtral 8x7B (HuggingFace model card)](https://huggingface.co/mistralai/Mixtral-8x7B-v0.1) — weights, config, usage
 - [DeepSeek-V2: A Strong, Economical, and Efficient MoE Language Model](https://arxiv.org/abs/2405.04434) — DeepSeek-AI, 2024
-- [DeepSeek-MoE: Towards Ultimate Expert Specialization](https://arxiv.org/abs/2401.04088) — DeepSeek-AI, 2024
+- [DeepSeek-MoE: Towards Ultimate Expert Specialization](https://arxiv.org/abs/2401.06066) — DeepSeek-AI, 2024
 - [Outrageously Large Neural Networks: The Sparsely-Gated MoE Layer](https://arxiv.org/abs/1701.06538) — Shazeer et al., 2017 (original MoE routing paper)
 - [GShard: Scaling Giant Models with Conditional Computation](https://arxiv.org/abs/2006.16668) — Lepikhin et al., 2020
 - [Expert Choice Routing](https://arxiv.org/abs/2202.09368) — Zhou et al., 2022

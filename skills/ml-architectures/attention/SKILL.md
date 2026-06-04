@@ -392,7 +392,7 @@ reads/writes that bottleneck memory bandwidth.
 |---------|-------------|-------|
 | Flash-1 | Tiled IO-aware attention, 2-4× speedup | [arXiv:2205.14135](https://arxiv.org/abs/2205.14135) |
 | Flash-2 | Better work partitioning, causal masking, ~2× over Flash-1 | [arXiv:2307.08691](https://arxiv.org/abs/2307.08691) |
-| Flash-3 | H100 warp specialization, FP8, 1.5-2× over Flash-2 | [arXiv:2407.08691](https://arxiv.org/abs/2407.08691) |
+| Flash-3 | H100 warp specialization, FP8, 1.5-2× over Flash-2 | [arXiv:2407.08691](https://arxiv.org/abs/2407.08608) |
 
 **Result:** Exact attention (no approximation) in O(N²) FLOPs but O(N) memory.
 Enables 16× longer contexts on the same hardware.
@@ -579,7 +579,7 @@ A batch of 32 requests at 4K context on Llama 3 8B: 512 MB × 32 = 16 GB just fo
 4. [DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model](https://arxiv.org/abs/2405.04434) — DeepSeek AI, 2024. MLA.
 5. [FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness](https://arxiv.org/abs/2205.14135) — Dao et al., 2022.
 6. [FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning](https://arxiv.org/abs/2307.08691) — Dao, 2023.
-7. [FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision](https://arxiv.org/abs/2407.08691) — Shah et al., 2024.
+7. [FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision](https://arxiv.org/abs/2407.08608) — Shah et al., 2024.
 8. [Efficient Memory Management for Large Language Model Serving with PagedAttention](https://arxiv.org/abs/2309.06180) — Kwon et al., 2023. vLLM.
 9. [SGLang: Efficient Execution of Structured Language Model Programs](https://arxiv.org/abs/2312.07104) — Zheng et al., 2023. RadixAttention.
 10. [Ring Attention with Blockwise Transformers for Near-Infinite Context](https://arxiv.org/abs/2310.01889) — Liu et al., 2023.

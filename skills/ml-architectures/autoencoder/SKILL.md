@@ -433,4 +433,4 @@ def kl_weight(epoch, warmup_epochs=10):
 ## References
 
 - [VAE (Kingma & Welling, 2013)](https://arxiv.org/abs/1312.6114) — Variational Autoencoders
-- [Ladder VAE (Sønderby et al., 2016)](https://arxiv.org/abs/1511.05644) — Hierarchical latent variables
+- [Ladder VAE (Sønderby et al., 2016)](https://arxiv.org/abs/1602.02282) — Hierarchical latent variables

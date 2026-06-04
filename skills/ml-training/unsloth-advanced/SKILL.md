@@ -244,4 +244,4 @@ Vision docs: https://docs.unsloth.ai/basics/vision-fine-tuning
 - GitHub: https://github.com/unslothai/unsloth
 - GRPO docs: https://docs.unsloth.ai/basics/reasoning-grpo-and-rl
 - DPO blog post (TRL): https://huggingface.co/blog/dpo-trl
-- ORPO paper: https://arxiv.org/abs/2309.07124
+- ORPO paper: https://arxiv.org/abs/2403.07691
