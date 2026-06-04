@@ -14,6 +14,58 @@ description: State Space Models (SSMs) and Mamba — selective state spaces with
 
 # Mamba & State Space Models (SSMs)
 
+## Architecture Diagram — Recurrence vs Attention, and the "Selective" Trick
+
+**Transformer (O(N²) attention) vs SSM / Mamba (O(N) recurrence):**
+
+```mermaid
+graph TB
+    subgraph TRANSFORMER ["TRANSFORMER — O(N²) attention"]
+        tx1[x_1] & tx2[x_2] & tx3[x_3] & txN[x_N] --> tattn["Attention (N×N)"]
+        tattn --> ty1[y_1] & ty2[y_2] & tyN[y_N]
+    end
+    subgraph SSM ["SSM / MAMBA — O(N) recurrence"]
+        sx1[x_1] --> h1[h]
+        sx2[x_2] --> h2[h]
+        sx3[x_3] --> h3[h]
+        sxN[x_N] --> hN[h]
+        h1 --> h2
+        h2 --> h3
+        h3 -.-> hN
+        h1 --> sy1[y_1]
+        h2 --> sy2[y_2]
+        h3 --> sy3[y_3]
+        hN --> syN[y_N]
+    end
+```
+
+| | Transformer | SSM / Mamba |
+|---|---|---|
+| Memory | O(N²) | O(1) per step (just h) |
+| Train | parallel | parallel scan → O(N) total |
+| Inference | O(N) per token (KV-cache) | streaming, O(1) per token |
+
+**Inside one Mamba-1 (S6) block — the "selective" trick:**
+
+```mermaid
+graph TD
+    xt([x_t]) --> proj["Linear → Δ_t<br/>Linear → B_t<br/>Linear → C_t<br/>Δ, B, C are FUNCTIONS of x_t<br/>(this is what S4 lacked)"]
+    proj --> disc["discretize<br/>Ā_t = exp(Δ_t · A)<br/>B̄_t = Δ_t · B_t"]
+    disc --> recur["h_t = Ā_t · h_(t-1) + B̄_t · x_t<br/>y_t = C_t · h_t"]
+    recur --> wrap["Mamba block adds:<br/>SiLU gate, conv1d, residual<br/>(transformer-shaped block,<br/>FFN replaced by selective SSM)"]
+```
+
+**Mamba-2 (SSD) duality — same operation viewed two ways:**
+
+```mermaid
+graph LR
+    rec["Recurrent view<br/>O(N) sequential<br/>(inference)"] <-->|"mathematically identical when<br/>Ā_t is scalar-times-identity"| mat["Matrix view<br/>O(N²) but parallel<br/>(training, GPU-friendly)"]
+```
+
+**Why "selective"**: in S4, A, B, C are *static* — the model can't pick "which token to remember vs forget" based on content. Mamba's S6 makes Δ, B, C depend on x_t, giving it the same content-based gating that attention has, but with O(N) cost.
+
+**Why hybrid (Jamba, Zamba)**: pure SSM struggles on tasks needing exact retrieval ("what's at position 47?"). Mixing a few attention layers among many SSM layers buys back retrieval without paying full O(N²).
+
 ## Core Concept: State Space Models
 
 SSMs map input sequence `x(t)` → output `y(t)` through a latent state `h(t)`:

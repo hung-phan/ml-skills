@@ -21,12 +21,52 @@ description: Mixture of Experts (MoE) sparse architectures — routing, load bal
 
 ---
 
+## Architecture Diagram — MoE Replaces the FFN Sub-Layer
+
+In a standard transformer block, every token goes through one FFN. In an MoE block, the FFN is replaced by N expert FFNs and a router that picks the top-K per token.
+
+**Standard transformer block:**
+
+```mermaid
+graph LR
+    tok([token]) --> attn[Attn]
+    attn --> ffn["FFN<br/>(always on)"]
+    ffn --> res([residual])
+```
+
+**MoE transformer block:**
+
+```mermaid
+graph TD
+    tok([token]) --> attn[Attn]
+    attn --> router["Router<br/>linear → top-K → softmax over K<br/>gate_logits = W_r · x<br/>keep top-K=2 of N=8 experts"]
+    router -->|off| E1[E_1]
+    router -->|off| E2[E_2]
+    router -->|ON| E3[E_3]
+    router -->|off| E4[E_4]
+    router -->|...| Edots[...]
+    router -->|ON| E8[E_8]
+    E3 --> sum["weighted sum<br/>gate_3·E_3(x) + gate_8·E_8(x)"]
+    E8 --> sum
+    sum --> out([residual / output])
+```
+
+**The trick**: total parameters = N × (FFN size), but per-token compute = K × (FFN size). For Mixtral 8×7B, N = 8, K = 2 — so ~47B total params but only ~13B active per token.
+
+**Load-balancing loss** (auxiliary, Switch Transformer / Fedus et al.) keeps the router from collapsing onto a few favourite experts:
+
+```
+L_balance = N · Σ_i  (fraction of tokens routed to expert i) · (avg gate prob for expert i)
+```
+
+Minimised when both are uniform → 1/N each → loss = 1.
+
 ## 2 — Core Insight: Sparse Activation via Learned Routing
 
 Each token passes through a **router** (small linear layer) that selects K experts out of N. Only selected experts run. The router is trained end-to-end with the rest of the model.
 
 ```
-Input Token → Router (linear + softmax) → Top-K selection → Selected Expert FFNs → Weighted sum → Output
+Input Token → Router (linear) → Top-K selection → softmax over K → Selected Expert FFNs → Weighted sum → Output
 ```
 
 Key properties:

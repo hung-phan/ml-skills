@@ -11,6 +11,7 @@ description: Index of deep learning architecture skills with PyTorch patterns an
 |-------|-------------|
 | [ANN](ann/) | Artificial Neural Networks — perceptron to deep MLP, activation functions, weight initialization, dropout |
 | [Attention](attention/) | All attention mechanisms — MHA, MQA, GQA, MLA, FlashAttention, PagedAttention, KV-cache math, serving patterns |
+| [Audio](audio/) | Audio generation — TTS (VALL-E, XTTS, F5-TTS, Parler-TTS, Kokoro, Kyutai), music (MusicGen, Stable Audio Open, YuE, ACE-Step), voice cloning, neural codecs (EnCodec, DAC, Mimi, SNAC) |
 | [Autoencoder](autoencoder/) | Autoencoders — vanilla, variational (VAE), denoising, sparse, and contrastive variants |
 | [Boltzmann](boltzmann/) | Boltzmann Machines — energy-based models, RBMs, Deep Belief Networks, contrastive divergence |
 | [CNN](cnn/) | Convolutional Neural Networks — conv layers, pooling, ResNet, EfficientNet, transfer learning |
@@ -28,6 +29,7 @@ description: Index of deep learning architecture skills with PyTorch patterns an
 | [SOM](som/) | Self-Organizing Maps — competitive learning, U-matrix visualization, minisom, anomaly detection |
 | [Transformer](transformer/) | Transformer architecture — self-attention, multi-head, positional encodings, KV-cache, GPT impl |
 | [Vision](vision/) | Vision models — ViT, Swin, CLIP, SAM, DINOv2, DETR, YOLOv8, timm, transfer learning |
+| [World Models](world-models/) | JEPA (I-JEPA, V-JEPA, V-JEPA 2, A-JEPA) — predict-in-representation-space SSL — and classical world models for RL/planning (Dreamer V1-V3, MuZero, TD-MPC2, DIAMOND, Genie, GameNGen) |
 
 ## When to Use What
 
@@ -41,10 +43,13 @@ description: Index of deep learning architecture skills with PyTorch patterns an
 | Graphs/networks | GNN |
 | Generation (images) | Diffusion or GAN |
 | Generation (text) | LLM (Transformer decoder-only) |
+| Generation (audio: TTS, music, voice cloning) | Audio (codec-LM, flow-matching, latent diffusion) |
 | Scale model without proportional compute | Mixture of Experts |
 | Clustering/visualization | SOM |
 | Feature learning (unsupervised) | Autoencoder or Boltzmann |
 | Decision making | Reinforcement Learning |
+| Self-supervised pretraining without contrastive negatives | World Models (I-JEPA / V-JEPA) |
+| Agent that plans inside a learned simulator | World Models (Dreamer V3, MuZero, TD-MPC2, DIAMOND) |
 | Optimizing inference memory/speed | Attention (GQA, MLA, FlashAttention) |
 | Retrieval, similarity search, RAG | Embeddings (bi-encoder + vector DB) |
 | Shrink model to fit on GPU | Quantization (AWQ/GPTQ/FP8) |

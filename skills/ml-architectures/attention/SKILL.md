@@ -22,6 +22,63 @@ you can combine GQA with FlashAttention + PagedAttention for maximum efficiency.
 
 ---
 
+## Architecture Diagram — MHA → MQA → GQA → MLA
+
+Each variant trades off KV-cache size against quality. H = num query heads; the difference is how many distinct K and V projections you keep.
+
+```mermaid
+graph TB
+    subgraph MHA ["MHA — vanilla"]
+        Q1[Q1] --- K1[K1]
+        Q2[Q2] --- K2[K2]
+        Q3[Q3] --- K3[K3]
+        Q4[Q4] --- K4[K4]
+        K1 -.- V1[V1]
+        K2 -.- V2[V2]
+        K3 -.- V3[V3]
+        K4 -.- V4[V4]
+    end
+    subgraph MQA ["MQA — PaLM, Falcon"]
+        mq1[Q1] & mq2[Q2] & mq3[Q3] & mq4[Q4] --> mK[K shared]
+        mK -.- mV[V shared]
+    end
+    subgraph GQA ["GQA — LLaMA-2/3, Mistral"]
+        gq1[Q1] & gq2[Q2] --> gKa[K_a]
+        gq3[Q3] & gq4[Q4] --> gKb[K_b]
+        gKa -.- gVa[V_a]
+        gKb -.- gVb[V_b]
+    end
+    subgraph MLA ["MLA — DeepSeek-V2/V3"]
+        lq1[Q1] & lq2[Q2] & lq3[Q3] & lq4[Q4] --> latent["Latent c<br/>(low-rank)"]
+        latent --> reco[K, V reconstructed<br/>at runtime]
+    end
+```
+
+**Cache size, quality summary:**
+
+| Variant | KV-cache | Quality |
+|---------|----------|---------|
+| MHA | H × d_h | best |
+| MQA | 1 × d_h | drops |
+| GQA | G × d_h | ≈ MHA |
+| MLA | c (≪ H × d_h) | ≈ MHA |
+
+| Variant | KV heads stored | Cache per token (FP16) | Quality | Examples |
+|---------|-----------------|------------------------|---------|----------|
+| MHA | H | 2 · L · H · d_h · 2 B | Best | GPT-3, original transformers |
+| MQA | 1 | 2 · L · 1 · d_h · 2 B | Drops | PaLM, Falcon |
+| GQA | G (1 < G < H) | 2 · L · G · d_h · 2 B | ≈ MHA | LLaMA-2/3, Mistral, Mixtral |
+| MLA | latent c (no separate K/V cache) | L · c · 2 B | ≈ MHA | DeepSeek-V2/V3 |
+
+**Why this matters at inference**: KV-cache size = (per-token figure) × batch × seq_len. Worked example for **LLaMA-3-70B** (L = 80, H = 64 query heads, G = 8 GQA groups, d_h = 128) at **8K context, batch 1**:
+
+- MHA hypothetical: `2·80·64·128·2 = 2,621,440 B ≈ 2.5 MB/token` → 8K · 2.5 MB ≈ **20 GB** of KV-cache.
+- GQA actual:       `2·80· 8·128·2 =   327,680 B ≈ 320 KB/token` → 8K · 320 KB ≈ **2.5 GB**.
+
+GQA's 8× reduction here is the reason a 70B model with 128K context fits on commodity GPUs at all.
+
+---
+
 ## Attention Variants (What's Being Computed)
 
 ### Multi-Head Attention (MHA)

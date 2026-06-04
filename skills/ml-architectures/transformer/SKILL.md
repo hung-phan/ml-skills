@@ -18,6 +18,51 @@ Complete reference for the Transformer architecture family — from vanilla "Att
 
 ---
 
+## Architecture Diagram — Decoder-Only Block (GPT/LLaMA-style)
+
+The unit stacked N times in a modern LLM. Pre-norm + residual is the dominant pattern.
+
+**Outer pipeline:**
+
+```mermaid
+graph TD
+    tokens([tokens]) --> embed["Token Embed<br/>(RoPE applied inside attention,<br/>not added here)"]
+    embed --> b1[Block 1]
+    b1 --> b2[Block 2]
+    b2 --> bdots[...]
+    bdots --> bN[Block N]
+    bN --> finalnorm[Final RMSNorm]
+    finalnorm --> lmhead["LM Head<br/>(often tied to token embedding)"]
+    lmhead --> logits([next-token logits])
+```
+
+**Inside one block — pre-norm + residual:**
+
+```mermaid
+graph TD
+    x([x]) --> rm1[RMSNorm]
+    rm1 --> attn["Multi-Head Attn<br/>Q, K, V projections; H heads<br/>causal mask; KV-cache at inference"]
+    attn --> add1((+))
+    x -. residual .-> add1
+    add1 --> rm2[RMSNorm]
+    rm2 --> ffn["FFN SwiGLU<br/>~4× hidden expansion"]
+    ffn --> add2((+))
+    add1 -. residual .-> add2
+    add2 --> y([to next block])
+```
+
+**Variants by mask & cross-attention**:
+
+| Variant | Mask | Cross-attention block | Examples |
+|---------|------|-----------------------|----------|
+| Encoder-only | None (bidirectional) | No | BERT, RoBERTa, ViT |
+| Decoder-only | Causal | No | GPT, LLaMA, Mistral |
+| Encoder–decoder | Causal in decoder | Yes (decoder attends to encoder out) | T5, BART, original 2017 transformer |
+
+Modern LLMs swap **post-norm → pre-norm + RMSNorm**, **sinusoidal/learned PE → RoPE**, and **ReLU FFN → SwiGLU**.
+
+---
+
 ## 1. Self-Attention (Scaled Dot-Product)
 
 Core operation: each token attends to all other tokens via learned projections.

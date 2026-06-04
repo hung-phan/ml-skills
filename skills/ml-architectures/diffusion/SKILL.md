@@ -18,6 +18,56 @@ description: Diffusion models for high-quality image, audio, and video generatio
 
 Diffusion models learn to reverse a gradual noising process. Forward process adds Gaussian noise over T steps; reverse process (learned neural network) denoises step-by-step to generate samples.
 
+## Architecture Diagram — Forward & Reverse Process
+
+**Forward (q, fixed) — add a little Gaussian noise each step:**
+
+```mermaid
+graph LR
+    x0(["x_0 (data)"]) -->|β_1| x1["x_1"]
+    x1 -->|β_2| x2["x_2"]
+    x2 -->|"..."| xT1["x_(T-1)"]
+    xT1 -->|β_T| xT(["x_T ≈ N(0, I)"])
+```
+
+**Reverse (p_θ, learned) — denoise one step at a time:**
+
+```mermaid
+graph RL
+    xT(["x_T (noise)"]) -->|p_θ| xT1["x_(T-1)"]
+    xT1 -->|"..."| x2["x_2"]
+    x2 -->|p_θ| x1["x_1"]
+    x1 -->|p_θ| x0(["x_0 (sample)"])
+```
+
+**Per step, U-Net / DiT predicts ε:**
+
+```mermaid
+graph LR
+    xt[x_t] --> net["Denoising Network<br/>ε_θ(x_t, t, c)<br/>(U-Net or DiT)"]
+    t[step t] --> net
+    c["cond c<br/>(text embed CLIP/T5,<br/>class label, image, ...)"] --> net
+    net --> eps([ε̂])
+```
+
+Then `x_{t-1} = (1/√α_t) · (x_t − (β_t/√(1−ᾱ_t)) · ε̂) + σ_t · z`
+
+**Latent diffusion (Stable Diffusion, Stable Audio, AudioLDM):**
+
+```mermaid
+graph LR
+    img1([image / audio]) --> venc[VAE Encoder]
+    venc --> z0[latent z_0]
+    z0 --> diff["diffusion happens here<br/>(~10-60× cheaper than pixels,<br/>depending on downsampling factor f)"]
+    diff --> z0out[latent z_0]
+    z0out --> vdec[VAE Decoder]
+    vdec --> img2([image / audio])
+```
+
+**Sampling speed knob**: trained with T ≈ 1000 noise steps; inference uses DDIM / DPM-Solver / Euler ODE solvers at 20-50 steps, or distilled models (Consistency Models, SDXL-Turbo, SD3-Turbo) at 1-4 steps.
+
+**Conditioning**: classifier-free guidance (CFG) runs the network *twice* per step — once with condition c, once with null condition ∅ — and extrapolates. That's why CFG roughly doubles inference cost.
+
 ## Mathematical Foundation
 
 ### Forward Process (q)

@@ -11,7 +11,7 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 
 | Folder | Covers |
 |--------|--------|
-| `ml-architectures/` | Attention, ANN, CNN, RNN, Transformer, Mamba, MoE, GAN, Diffusion, GNN, LLM, Vision, RL, SOM, Autoencoder, Boltzmann, Embeddings, Quantization, Regression/Classification |
+| `ml-architectures/` | Attention, ANN, Audio, CNN, RNN, Transformer, Mamba, MoE, GAN, Diffusion, GNN, LLM, Vision, World Models (JEPA / Dreamer / MuZero), RL, SOM, Autoencoder, Boltzmann, Embeddings, Quantization, Regression/Classification |
 | `ml-libraries/` | pandas, numpy, polars, seaborn, plotly, keras, pytorch, scikit-learn, xgboost, huggingface, dspy, litellm, ray, vllm, sglang, triton-inference-server |
 | `ml-training/` | feature-selection, training-workflow, evaluation, experiment-tracking, data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced, Ray distributed SFT, distributed GRPO |
 | `data-prep/` | EDA, feature engineering, data validation |
@@ -49,13 +49,16 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | Text — generation, chat, instruction | `ml-architectures/llm/` |
 | Images — classification, detection, segmentation | `ml-architectures/vision/` (ViT, CLIP, SAM, YOLO) or `ml-architectures/cnn/` |
 | Images — generation | `ml-architectures/diffusion/` (preferred) or `ml-architectures/gan/` |
-| Audio / speech | `ml-architectures/cnn/` (spectrograms) or `ml-architectures/transformer/` (Whisper-style) |
+| Audio — recognition (Whisper, spectrograms) | `ml-architectures/cnn/` (spectrograms) or `ml-architectures/transformer/` (Whisper-style) |
+| Audio — generation (TTS, music, voice cloning) | `ml-architectures/audio/` |
 | Time series — short, sequential | `ml-architectures/rnn/` (LSTM/GRU) |
 | Time series — long, parallel training | `ml-architectures/transformer/` |
 | Time series — ultra-long (>8K), streaming | `ml-architectures/mamba/` |
 | Graphs / networks | `ml-architectures/gnn/` |
 | Multimodal (text + image) | `ml-architectures/vision/` (CLIP) + `ml-architectures/llm/` |
 | Sequential decision making | `ml-architectures/reinforcement-learning/` |
+| Self-supervised pretraining (no augmentations / negatives) | `ml-architectures/world-models/` (I-JEPA / V-JEPA) |
+| Agent that plans inside a learned simulator | `ml-architectures/world-models/` (Dreamer V3, MuZero, TD-MPC2, DIAMOND) |
 
 ### LLM-specific
 
@@ -84,6 +87,9 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | Image generation (Stable Diffusion-style) | `ml-architectures/diffusion/` |
 | Image generation (older / GAN-based) | `ml-architectures/gan/` |
 | Text generation | `ml-architectures/llm/` |
+| Speech synthesis (TTS) | `ml-architectures/audio/` (codec-LM, flow-matching) |
+| Music / sound effects generation | `ml-architectures/audio/` (MusicGen, Stable Audio Open) |
+| Voice cloning / voice conversion | `ml-architectures/audio/` (XTTS-v2, F5-TTS, RVC) |
 | Unsupervised feature learning | `ml-architectures/autoencoder/` (VAE) or `ml-architectures/boltzmann/` |
 
 ### Training & scale
@@ -143,8 +149,11 @@ For "which model architecture?" jump straight to `ml-architectures/SKILL.md` —
 | Image | Generation | Diffusion (`ml-architectures/diffusion/`) |
 | Graph | Node/edge tasks | GNN (`ml-architectures/gnn/`) |
 | Text | Generation | LLM (`ml-architectures/llm/`) |
+| Audio (text/voice/music) | Generation | Audio (`ml-architectures/audio/`) |
 | Anything | Scale params without compute | MoE (`ml-architectures/mixture-of-experts/`) |
 | State-action env | Decision policy | RL (`ml-architectures/reinforcement-learning/`) |
+| Image / video | SSL pretraining without augmentations | World Models — JEPA (`ml-architectures/world-models/`) |
+| State-action env | Plan in a learned simulator | World Models — Dreamer / MuZero / TD-MPC2 / DIAMOND (`ml-architectures/world-models/`) |
 
 ## Contributing to this library
 
