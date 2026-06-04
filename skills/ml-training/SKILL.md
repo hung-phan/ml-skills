@@ -25,6 +25,7 @@ description: Complete ML training pipeline — feature selection, training loops
 |------|-------|
 | Which features matter? | `feature-selection/` |
 | Cross-validation, Optuna tuning | `training-workflow/` |
+| Run training on HF Jobs / managed cloud GPUs | `hf-jobs-workflow/` |
 | Metrics, imbalanced classes, calibration | `evaluation/` |
 | Fine-tune LLM on 1 GPU | `unsloth-sft/` |
 | GRPO/DPO/vision on 1 GPU | `unsloth-advanced/` |

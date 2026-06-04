@@ -1,6 +1,6 @@
 ---
 name: experiment-tracking
-description: Experiment tracking and model registry — MLflow and Weights & Biases setup, run comparison, artifact logging, and reproducibility patterns. Use when adding tracking to a training script, comparing runs across hyperparameters, or registering models for deployment.
+description: Experiment tracking and model registry — MLflow, Weights & Biases, and Trackio (HF-native) setup, run comparison, artifact logging, alert-driven hyperparameter sweeps, and reproducibility patterns. Use when adding tracking to a training script, comparing runs across hyperparameters, registering models for deployment, or running on Hugging Face Jobs.
 ---
 
 # Experiment Tracking & Model Registry
@@ -121,6 +121,111 @@ mlflow server \
   --default-artifact-root s3://mlflow-artifacts/ \
   --host 0.0.0.0 --port 5000
 ```
+
+## Trackio (HF-native)
+
+[Trackio](https://huggingface.co/docs/trackio) is Hugging Face's lightweight, open-source experiment tracker, designed to drop into the Transformers `Trainer` and every TRL trainer with zero glue code. Unlike MLflow/W&B/Neptune, Trackio runs as a public Hugging Face Space backed by a dataset repo, so the dashboard URL is shareable by default and there's no separate server to host.
+
+Reach for Trackio when:
+- Your training already runs on Hugging Face Jobs (see [`../hf-jobs-workflow/`](../hf-jobs-workflow/)) — it's the path of least resistance and the dashboard Space is auto-created.
+- You want a public, link-shareable run dashboard without paying for a SaaS tier.
+- You want **alerts** (programmatic decision points emitted *during* training) you can read back between runs to drive the next sweep.
+
+Reach for W&B / MLflow / Neptune when you need self-hosting, model registry stages, or the broader analytics features Trackio doesn't yet match.
+
+### Wire it in
+
+```python
+from trl import SFTConfig
+
+config = SFTConfig(
+    output_dir="./out",
+    report_to="trackio",                              # one line, that's it
+    run_name="sft_qwen3-4b_lr2e-5_bs128",              # group by descriptive name
+    project="qwen3-instruction-tuning",                # keeps related runs grouped
+    trackio_space_id="myuser/ml-skills-train-runs",    # public dashboard Space
+)
+```
+
+`project` and `trackio_space_id` can also be set via `TRACKIO_PROJECT` / `TRACKIO_SPACE_ID` env vars — useful when the same script is reused across sweeps.
+
+For the surrounding operational config a real HF Jobs run also needs (`push_to_hub`, `hub_model_id`, `disable_tqdm`, `logging_first_step`, `hub_strategy`, timeout), see [`../hf-jobs-workflow/`](../hf-jobs-workflow/) — that's the canonical home for cloud-job training discipline.
+
+### Alert-driven sweeps
+
+The pattern that makes Trackio (and `wandb.alert`, and MLflow tags) useful for *autonomous* training loops: emit a structured alert at every decision point, then read alerts back between runs to choose the next config — instead of re-staring at thousands of metric points.
+
+```python
+import trackio
+from transformers import TrainerCallback
+
+class AlertCallback(TrainerCallback):
+    """Emit one structured alert per real decision point.
+
+    Levels:
+      ERROR — stop and change approach (divergence, NaN, OOM)
+      WARN  — tweak hyperparameters (overfitting, KL spike, reward collapse)
+      INFO  — milestones (target reached, checkpoint saved)
+
+    Always include numeric values + an actionable suggestion in `text`,
+    e.g. "loss=12.4 at step 200 — lr likely too high, try ×0.1".
+    A future call must be able to PARSE it and act on it.
+    """
+    def on_log(self, args, state, control, logs=None, **kw):
+        if not logs:
+            return
+        loss = logs.get("loss")
+        if loss is not None and loss > 10 and state.global_step > 100:
+            trackio.alert(
+                title="loss-divergence",
+                text=f"loss={loss:.2f} at step {state.global_step} — lr likely too high, try ×0.1",
+                level="ERROR",
+            )
+
+    def on_evaluate(self, args, state, control, metrics=None, **kw):
+        if not metrics:
+            return
+        # Eval-only metrics are not visible in on_log — must hook on_evaluate.
+        eval_loss = metrics.get("eval_loss")
+        if eval_loss is not None and eval_loss > metrics.get("loss", 0) * 1.3:
+            trackio.alert(
+                title="overfitting",
+                text=f"eval_loss={eval_loss:.3f} >> train_loss — try weight_decay ×10",
+                level="WARN",
+            )
+
+# trainer = SFTTrainer(..., callbacks=[AlertCallback()])
+```
+
+Read alerts back between runs — don't parse raw metrics in your sweep driver:
+
+```bash
+# Always pass --json for machine-parseable output
+trackio get alerts --project qwen3-instruction-tuning --run sft_qwen3-4b_lr2e-5_bs128 --json
+trackio get alerts --project qwen3-instruction-tuning --since 2026-06-04T00:00:00Z --json
+trackio list  runs   --project qwen3-instruction-tuning --json
+```
+
+```python
+import trackio
+api = trackio.Api()
+runs = api.runs("qwen3-instruction-tuning")
+for run in runs:
+    for alert in run.alerts():
+        if alert.title == "loss-divergence":
+            next_lr = run.config["learning_rate"] * 0.1   # mutate only what the alert justifies
+```
+
+Mutation policy from prior alerts (works across Trackio, wandb.alert, or any structured-log scheme):
+
+| Alert title       | Suggested next-config change         |
+|-------------------|--------------------------------------|
+| `diverged`        | lr × 0.1                             |
+| `overfitting`     | weight_decay × 10, or reduce capacity |
+| `early-stopping`  | lr × 0.5 or adjust schedule          |
+| `target-reached`  | refine around current config          |
+
+Only mutate keys the alerts justify changing — every other hyperparameter stays pinned, so the next run is interpretable as a delta over the prior one.
 
 ## Weights & Biases (W&B)
 
@@ -368,27 +473,28 @@ with mlflow.start_run(run_name="optuna-sweep"):
 
 ## Comparison Table
 
-| Feature | MLflow | Weights & Biases | Neptune | TensorBoard |
-|---------|--------|-----------------|---------|-------------|
-| **Hosting** | Self-hosted or Databricks | Cloud (SaaS) | Cloud (SaaS) | Local / TensorBoard.dev |
-| **Pricing** | Free (OSS) | Free tier (100GB), Team $50/user/mo | Free tier, Team $79/user/mo | Free |
-| **Model Registry** | ✅ Built-in (stages) | ✅ (Model Registry) | ✅ (Model Registry) | ❌ |
-| **Autolog** | ✅ sklearn, pytorch, tf, xgb, transformers | ✅ via integrations | ✅ via integrations | ❌ Manual only |
-| **HPO Sweeps** | ❌ (use Optuna/Ray Tune) | ✅ Built-in Bayesian | ❌ (use Optuna) | ❌ |
-| **Dataset Versioning** | ✅ (Artifacts) | ✅ (Artifacts) | ✅ (Artifacts) | ❌ |
-| **Collaboration** | Basic (shared server) | ✅ Teams, reports, comments | ✅ Teams, workspaces | ❌ |
-| **Offline Mode** | ✅ (local files) | ✅ (wandb offline) | ✅ (offline mode) | ✅ (local logs) |
-| **UI Quality** | Good (functional) | Excellent (polished) | Very good | Good (scalars/graphs) |
-| **Custom Dashboards** | ❌ | ✅ Reports, panels | ✅ Custom views | Limited |
-| **Data Privacy** | ✅ Full control (self-host) | ⚠️ Cloud default, private cloud available | ⚠️ Cloud default | ✅ Local |
-| **Git Integration** | ✅ (code version logged) | ✅ (code saving, diff) | ✅ (source code) | ❌ |
-| **Best For** | Enterprise/self-hosted, MLOps pipelines | Research teams, rapid experimentation | Large teams needing structure | Quick local visualization |
+| Feature | MLflow | Weights & Biases | Neptune | Trackio | TensorBoard |
+|---------|--------|-----------------|---------|---------|-------------|
+| **Hosting** | Self-hosted or Databricks | Cloud (SaaS) | Cloud (SaaS) | Hugging Face Space (public by default) | Local / TensorBoard.dev |
+| **Pricing** | Free (OSS) | Free tier (100GB), Team $50/user/mo | Free tier, Team $79/user/mo | Free (OSS, runs on free HF Space tier) | Free |
+| **Model Registry** | ✅ Built-in (stages) | ✅ (Model Registry) | ✅ (Model Registry) | ❌ (use the Hub directly) | ❌ |
+| **Autolog** | ✅ sklearn, pytorch, tf, xgb, transformers | ✅ via integrations | ✅ via integrations | ✅ Transformers Trainer + all TRL trainers | ❌ Manual only |
+| **HPO Sweeps** | ❌ (use Optuna/Ray Tune) | ✅ Built-in Bayesian | ❌ (use Optuna) | ❌ alert-driven via `trackio.alert` | ❌ |
+| **Dataset Versioning** | ✅ (Artifacts) | ✅ (Artifacts) | ✅ (Artifacts) | ❌ (use HF Datasets) | ❌ |
+| **Collaboration** | Basic (shared server) | ✅ Teams, reports, comments | ✅ Teams, workspaces | ✅ Public Space URL, HF org-scoped | ❌ |
+| **Offline Mode** | ✅ (local files) | ✅ (wandb offline) | ✅ (offline mode) | ⚠️ Limited | ✅ (local logs) |
+| **UI Quality** | Good (functional) | Excellent (polished) | Very good | Lightweight, focused | Good (scalars/graphs) |
+| **Custom Dashboards** | ❌ | ✅ Reports, panels | ✅ Custom views | Limited | Limited |
+| **Data Privacy** | ✅ Full control (self-host) | ⚠️ Cloud default, private cloud available | ⚠️ Cloud default | Public Space by default; private possible | ✅ Local |
+| **Git Integration** | ✅ (code version logged) | ✅ (code saving, diff) | ✅ (source code) | Run config logged | ❌ |
+| **Best For** | Enterprise/self-hosted, MLOps pipelines | Research teams, rapid experimentation | Large teams needing structure | HF Jobs / TRL workflows; alert-driven sweeps | Quick local visualization |
 
 ### When to Choose What
 
 - **MLflow**: You need self-hosting, Databricks integration, or a production model registry with CI/CD
 - **W&B**: You want the best experiment comparison UI, built-in sweeps, and team collaboration
 - **Neptune**: Enterprise teams needing granular access control and structured metadata
+- **Trackio**: Training already on Hugging Face (Jobs / TRL); want a public, free, link-shareable dashboard with `trackio.alert` decision points
 - **TensorBoard**: Quick local debugging, don't need persistence or collaboration
 
 ## Best Practices
@@ -494,3 +600,6 @@ mlflow.log_artifact("config.yaml")
 5. [Neptune Documentation](https://docs.neptune.ai/) — Experiment tracking, model registry, integrations
 6. [Optuna + MLflow Integration](https://optuna.readthedocs.io/en/stable/reference/integration.html) — HPO with tracking
 7. [HuggingFace + W&B Guide](https://docs.wandb.ai/guides/integrations/huggingface) — Trainer integration
+8. [Trackio Documentation](https://huggingface.co/docs/trackio) — HF-native tracker; `report_to="trackio"` + `trackio.alert` API
+9. [Trackio launch blog post](https://huggingface.co/blog/trackio) — design rationale and end-to-end TRL example
+10. [Transformers `Trainer` reference](https://huggingface.co/docs/transformers/main/en/main_classes/trainer) — `report_to`, `disable_tqdm`, `logging_first_step`

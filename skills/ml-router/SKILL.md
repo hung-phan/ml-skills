@@ -29,6 +29,7 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | 4. Pick a model | `ml-architectures/SKILL.md` (decision tree at the bottom) |
 | 5. Pick a library | `ml-libraries/SKILL.md` |
 | 6. Train | `ml-training/training-workflow/` |
+| 6b. Run training on managed cloud GPUs (HF Jobs) | `ml-training/hf-jobs-workflow/` |
 | 7. Track experiments | `ml-training/experiment-tracking/` |
 | 8. Evaluate | `ml-training/evaluation/` |
 | 9. Scale training across GPUs | `ml-training/data-parallel/` (DDP/FSDP) or `ml-libraries/ray/` |
