@@ -1,6 +1,6 @@
 ---
-name: EDA
-description: Use when user wants exploratory data analysis, statistical profiling, distribution testing, outlier detection, correlation analysis, hypothesis testing, or automated profiling with ydata-profiling/sweetviz.
+name: eda
+description: Exploratory data analysis — statistical profiling, distribution testing, outlier detection, correlation analysis, hypothesis testing, and automated profiling with ydata-profiling/sweetviz. Use when starting on a new dataset or auditing data quality before training.
 ---
 
 # Exploratory Data Analysis (EDA)

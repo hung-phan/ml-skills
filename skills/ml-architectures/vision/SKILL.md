@@ -1,6 +1,6 @@
 ---
-name: Vision Models
-description: Vision transformer architectures (ViT, Swin, DeiT), CLIP, SAM, DINOv2, MAE, DETR, YOLOv8, transfer learning patterns, timm/HuggingFace usage, and task selection guide for classification, detection, and segmentation.
+name: vision
+description: Vision transformer architectures (ViT, Swin, DeiT), CLIP, SAM, DINOv2, MAE, DETR, YOLOv8, plus transfer learning, timm/HuggingFace usage, and a task-selection guide. Use when picking a pretrained backbone for classification, detection, or segmentation, or fine-tuning ViT-family models.
 ---
 
 ## Why This Exists

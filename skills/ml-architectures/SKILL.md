@@ -1,6 +1,6 @@
 ---
 name: ml-architectures
-description: Deep learning architecture skills with PyTorch patterns and decision guides. Covers attention, transformers, CNNs, RNNs, GANs, diffusion, MoE, and more.
+description: Index of deep learning architecture skills with PyTorch patterns and decision guides — attention, transformers, CNNs, RNNs, GANs, diffusion, MoE, vision, LLMs, and more. Use when choosing a model architecture for a problem or navigating the architecture sub-skills.
 ---
 
 # ML Architectures

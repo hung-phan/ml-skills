@@ -1,16 +1,6 @@
 ---
 name: gradient-boosting
-description: XGBoost, LightGBM, and CatBoost for tabular data — hyperparameter tuning, feature importance, GPU training
-triggers:
-  - xgboost
-  - lightgbm
-  - catboost
-  - gradient boosting
-  - tabular data
-  - gbm
-  - gbdt
-  - boosted trees
-version: 1.0.0
+description: XGBoost, LightGBM, and CatBoost for tabular data — hyperparameter tuning, feature importance, and GPU training. Use when modeling tabular data (often the right choice over deep learning), comparing GBDT libraries, or tuning learning rate, depth, and regularization.
 ---
 
 # Gradient Boosting (XGBoost / LightGBM / CatBoost)

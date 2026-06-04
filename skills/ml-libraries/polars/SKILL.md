@@ -1,6 +1,6 @@
 ---
 name: polars
-description: Use when user wants fast DataFrame operations, mentions polars, lazy evaluation, scan_parquet, streaming, or asks about high-performance data processing as a pandas alternative.
+description: Polars DataFrames — fast columnar processing with lazy evaluation, scan_parquet, streaming, and a pandas-alternative API. Use when pandas is too slow, processing data larger than memory via streaming, or wanting Rust-backed query optimization.
 ---
 
 # Polars Skill

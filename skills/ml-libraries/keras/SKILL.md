@@ -1,6 +1,6 @@
 ---
 name: keras
-description: Use when user wants to build neural networks with Keras, mentions Sequential/Functional API, transfer learning, callbacks, or asks about multi-backend deep learning prototyping.
+description: Keras 3 multi-backend (TensorFlow/JAX/PyTorch) deep learning — Sequential and Functional APIs, transfer learning, callbacks, and rapid prototyping. Use when prototyping neural networks with high-level Keras APIs or building backend-portable models.
 ---
 
 # Keras Skill Reference

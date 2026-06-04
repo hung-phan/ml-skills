@@ -1,6 +1,6 @@
 ---
 name: numpy
-description: Use when user wants to work with arrays, mentions numpy, broadcasting, linear algebra, vectorization, or asks about numerical computing and matrix operations.
+description: NumPy arrays and numerical computing — broadcasting, vectorization, linear algebra, matrix operations, and memory layout. Use when working with N-dimensional arrays, optimizing Python loops via vectorization, or interfacing with PyTorch/JAX tensors.
 ---
 
 # NumPy Patterns Skill

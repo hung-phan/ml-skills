@@ -1,6 +1,6 @@
 ---
 name: plotly
-description: Use when user wants interactive charts, mentions plotly, dash, 3D plots, animations, or asks about web-embeddable visualizations with hover/zoom/pan.
+description: Interactive charting library — Plotly Express, graph_objects, Dash apps, 3D plots, and animations. Use when building web-embeddable visualizations with hover/zoom/pan or interactive dashboards with Dash.
 ---
 
 # Plotly Skill Reference

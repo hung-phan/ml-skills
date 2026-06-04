@@ -1,6 +1,6 @@
 ---
 name: tilelang
-description: Write high-performance GPU kernels (GEMM, FlashAttention, MLA, convolutions) in Python with explicit control over shared memory, warp-level ops, and multi-stage pipelining — compiling to CUDA/HIP via TVM/TIR
+description: Write high-performance GPU kernels (GEMM, FlashAttention, MLA, convolutions) in Python with explicit control over shared memory, warp-level ops, and multi-stage pipelining, compiling to CUDA/HIP via TVM/TIR. Use when Triton's block-level abstraction isn't expressive enough or you need fine-grained shared-memory and pipeline control.
 ---
 
 # TileLang

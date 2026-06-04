@@ -1,6 +1,6 @@
 ---
-name: GNN
-description: Use when building graph neural networks, node/edge/graph classification, PyG, DGL, or message passing
+name: gnn
+description: Graph neural networks for node, edge, and graph-level tasks — message passing, GCN/GAT/GraphSAGE, PyG and DGL patterns. Use when modeling graph-structured data (social networks, molecules, knowledge graphs, recommendations) where relationships matter as much as node features.
 ---
 
 ## Why This Exists

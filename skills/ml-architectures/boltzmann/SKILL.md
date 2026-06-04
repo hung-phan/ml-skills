@@ -1,6 +1,6 @@
 ---
-name: Boltzmann Machine
-description: Use when working with RBMs, energy-based models, contrastive divergence, or DBN pretraining
+name: boltzmann
+description: Restricted Boltzmann machines (RBMs), energy-based models, contrastive divergence, and Deep Belief Network (DBN) pretraining. Use when building probabilistic generative models with principled energy functions or studying foundational unsupervised learning.
 ---
 
 ## Why This Exists

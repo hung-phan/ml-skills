@@ -1,6 +1,6 @@
 ---
-name: production
-description: DSPy production settings for serving — cache, history, tracing, async workers. Use when deploying DSPy modules to production services or tuning DSPy for high-throughput inference.
+name: dspy-production
+description: DSPy production settings for serving — cache, history, tracing, and async workers. Use when deploying DSPy modules to production services or tuning DSPy for high-throughput inference.
 ---
 
 # DSPy Production Settings

@@ -1,18 +1,6 @@
 ---
 name: distributed-data-parallelism
-description: Distributed training strategies for scaling deep learning across multiple GPUs
-version: 1.0.0
-triggers:
-  - distributed training
-  - multi-GPU training
-  - DDP
-  - FSDP
-  - data parallelism
-  - tensor parallelism
-  - pipeline parallelism
-  - model parallelism
-  - scale training
-  - OOM during training
+description: Distributed training strategies for scaling deep learning across multiple GPUs — DDP, FSDP, tensor parallelism, pipeline parallelism, and model parallelism. Use when scaling training beyond a single GPU, hitting OOM during training, or choosing between DDP and FSDP for a model size.
   - gradient all-reduce
 ---
 

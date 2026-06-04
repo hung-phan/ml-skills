@@ -1,11 +1,6 @@
 ---
 name: attention
-description: >
-  All attention mechanisms for LLMs: variants (MHA, MQA, GQA, MLA, sliding window,
-  sparse, linear, cross), efficient implementations (FlashAttention, PagedAttention,
-  RadixAttention, Ring Attention), KV-cache math, and serving patterns. Use when
-  designing transformer architectures, optimizing inference memory, extending context
-  length, choosing attention for a new model, or debugging KV-cache OOM.
+description: All attention mechanisms for LLMs — variants (MHA, MQA, GQA, MLA, sliding window, sparse, linear, cross), efficient implementations (FlashAttention, PagedAttention, RadixAttention, Ring Attention), KV-cache math, and serving patterns. Use when designing transformer architectures, optimizing inference memory, extending context length, choosing attention for a new model, or debugging KV-cache OOM.
 ---
 
 # Attention Mechanisms for LLMs

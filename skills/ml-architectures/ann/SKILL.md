@@ -1,6 +1,6 @@
 ---
-name: ANN
-description: Use when building MLPs, tabular classification/regression, or need activation/initialization/normalization reference
+name: ann
+description: Multi-layer perceptrons (MLPs) for tabular classification and regression, plus activation, initialization, and normalization reference. Use when building feedforward networks for tabular data or need a quick reference for ReLU/GELU/SwiGLU, He/Xavier init, or BatchNorm/LayerNorm choices.
 ---
 
 ## Why This Exists

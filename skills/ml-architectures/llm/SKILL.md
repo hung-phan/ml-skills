@@ -1,6 +1,6 @@
 ---
-name: LLM
-description: Large Language Model architectures (GPT, BERT, T5), modern optimizations (RoPE, GQA, SwiGLU, RMSNorm), tokenization, KV-cache, Flash Attention, LoRA/QLoRA fine-tuning, RLHF/DPO alignment, inference optimization, and serving with vLLM.
+name: llm
+description: Large language model architectures (GPT, BERT, T5), modern optimizations (RoPE, GQA, SwiGLU, RMSNorm), tokenization, KV-cache, Flash Attention, LoRA/QLoRA fine-tuning, RLHF/DPO alignment, and inference optimization. Use when designing or fine-tuning an LLM, choosing between encoder/decoder/encoder-decoder, or planning serving with vLLM.
 ---
 
 ## Why This Exists

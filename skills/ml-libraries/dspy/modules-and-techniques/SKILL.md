@@ -1,6 +1,6 @@
 ---
-name: modules-and-techniques
-description: Comprehensive reference for all DSPy modules, optimizers, signatures, tools, async, streaming, and caching. Use when choosing a DSPy module for a task, configuring optimizers, integrating tools, or using advanced features like RLM, streaming, or multimodal inputs.
+name: dspy-modules-and-techniques
+description: Comprehensive reference for DSPy modules, optimizers, signatures, tools, async, streaming, and caching. Use when choosing a DSPy module for a task, configuring optimizers, integrating tools, or using advanced features like RLM, streaming, or multimodal inputs.
 ---
 
 # DSPy Modules and Techniques

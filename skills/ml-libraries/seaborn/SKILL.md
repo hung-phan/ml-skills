@@ -1,6 +1,6 @@
 ---
 name: seaborn
-description: Use when user wants statistical visualizations, mentions seaborn, heatmap, pairplot, FacetGrid, or asks about publication-quality static plots from DataFrames.
+description: Statistical visualization library on top of matplotlib — heatmaps, pairplots, FacetGrid, distribution plots, and regression overlays. Use when creating publication-quality static plots from pandas DataFrames or doing exploratory statistical visualization.
 ---
 
 # Seaborn Skill

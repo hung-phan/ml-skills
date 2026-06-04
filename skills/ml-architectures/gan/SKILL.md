@@ -1,6 +1,6 @@
 ---
-name: GAN
-description: Use when building GANs, DCGAN, WGAN, StyleGAN, Pix2Pix, CycleGAN, or adversarial training
+name: gan
+description: Generative adversarial networks for image and data synthesis — DCGAN, WGAN-GP, StyleGAN, Pix2Pix, CycleGAN, and adversarial training patterns. Use when building one-shot generators (faster than diffusion), doing image-to-image translation, or generating synthetic data for augmentation.
 ---
 
 ## Why This Exists

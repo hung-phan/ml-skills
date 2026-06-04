@@ -1,6 +1,6 @@
 ---
-name: Model Training Workflow
-description: Use when user needs cross-validation strategies, hyperparameter tuning (Optuna, Ray Tune), experiment tracking (MLflow, W&B), sklearn Pipelines, model serialization (joblib, ONNX), early stopping, learning curves, or reproducibility setup.
+name: training-workflow
+description: End-to-end model training workflow — cross-validation, hyperparameter tuning (Optuna, Ray Tune), experiment tracking (MLflow, W&B), sklearn Pipelines, model serialization (joblib, ONNX), early stopping, and learning curves. Use when setting up a reproducible training pipeline or choosing CV/HPO/tracking tooling.
 ---
 
 # Model Training Workflow

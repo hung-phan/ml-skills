@@ -1,27 +1,6 @@
 ---
-skill: vllm
-trigger:
-  description: "LLM inference serving, PagedAttention, vLLM deployment, model serving optimization, OpenAI-compatible API server, batch inference, continuous batching"
-  triggers:
-    - "serve LLM"
-    - "deploy model"
-    - "vllm"
-    - "PagedAttention"
-    - "inference server"
-    - "OpenAI compatible"
-    - "batch inference"
-    - "model serving"
-    - "GPU memory optimization"
-    - "tensor parallel"
-    - "quantized inference"
-    - "speculative decoding"
-    - "multi-LoRA"
-    - "structured output"
-    - "guided decoding"
-globs:
-  - "**/*vllm*"
-  - "**/serve*.py"
-  - "**/inference*.py"
+name: vllm
+description: High-throughput LLM serving with PagedAttention, continuous batching, tensor parallelism, quantization, speculative decoding, and multi-LoRA. Use when serving LLMs in production, building OpenAI-compatible API servers, or optimizing GPU memory and inference throughput.
 ---
 
 # vLLM — High-Throughput LLM Inference Engine

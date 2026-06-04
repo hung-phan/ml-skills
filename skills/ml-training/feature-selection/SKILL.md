@@ -1,6 +1,6 @@
 ---
-name: Feature Selection
-description: Use when user needs to select informative features, remove noise, detect multicollinearity, or reduce dimensionality. Covers filter (variance, MI, chi-square), wrapper (RFE, Boruta, SFS), embedded (Lasso, tree importance, SHAP), and VIF/stability selection.
+name: feature-selection
+description: Feature selection methods — filter (variance, mutual information, chi-square), wrapper (RFE, Boruta, SFS), embedded (Lasso, tree importance, SHAP), and VIF/stability selection. Use when selecting informative features, removing noise, detecting multicollinearity, or reducing dimensionality before training.
 ---
 
 # Feature Selection

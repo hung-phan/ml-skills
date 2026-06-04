@@ -1,6 +1,6 @@
 ---
-name: Diffusion Model
-description: Use when building diffusion models, DDPM, DDIM, Stable Diffusion, LoRA fine-tuning, or image generation
+name: diffusion
+description: Diffusion models for high-quality image, audio, and video generation — DDPM, DDIM, Stable Diffusion, LoRA fine-tuning, and classifier-free guidance. Use when generating high-fidelity content where mode coverage matters more than sampling speed, or fine-tuning Stable Diffusion with LoRA/DreamBooth.
 ---
 
 ## Why This Exists

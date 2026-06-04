@@ -1,6 +1,6 @@
 ---
-name: Transformer
-description: Complete Transformer architecture reference — self-attention, multi-head attention, positional encodings (sinusoidal, learned, RoPE, ALiBi), FFN variants, layer normalization, KV-cache, Flash Attention, and full GPT-style implementation.
+name: transformer
+description: Complete Transformer architecture reference — self-attention, multi-head attention, positional encodings (sinusoidal, learned, RoPE, ALiBi), FFN variants, layer normalization, KV-cache, and Flash Attention. Use when implementing a Transformer from scratch, debugging attention internals, or choosing positional encoding and normalization for a custom model.
 ---
 
 ## Why This Exists

@@ -1,6 +1,6 @@
 ---
-name: Evaluation and Class Imbalance
-description: Use when user deals with imbalanced classification, needs metrics beyond accuracy (F1, ROC-AUC, PR-AUC, MCC), probability calibration, threshold optimization, statistical model comparison, or SMOTE/ADASYN sampling.
+name: evaluation
+description: Model evaluation and class imbalance handling — metrics beyond accuracy (F1, ROC-AUC, PR-AUC, MCC), probability calibration, threshold optimization, statistical model comparison, and SMOTE/ADASYN sampling. Use when evaluating classifiers under imbalance or picking the right metric for a deployment decision.
 ---
 
 # Evaluation and Class Imbalance

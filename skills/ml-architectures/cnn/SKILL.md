@@ -1,6 +1,6 @@
 ---
-name: CNN
-description: Use when building convolutional networks, image classification, detection, segmentation, or transfer learning
+name: cnn
+description: Convolutional neural networks for image tasks — classification, object detection, semantic/instance segmentation, and transfer learning from torchvision/timm backbones. Use when building vision models on raster data, fine-tuning pretrained ResNet/EfficientNet/ConvNeXt, or selecting between CNN and ViT for a vision problem.
 ---
 
 ## Why This Exists

@@ -1,6 +1,6 @@
 ---
-name: Reinforcement Learning
-description: RL algorithms from tabular Q-learning to deep RL (DQN, PPO, SAC, A2C), gymnasium environments, experience replay, reward shaping, multi-agent RL, GAE, stable-baselines3, and CleanRL patterns.
+name: reinforcement-learning
+description: RL algorithms from tabular Q-learning to deep RL (DQN, PPO, SAC, A2C), gymnasium environments, experience replay, reward shaping, multi-agent RL, GAE, stable-baselines3, and CleanRL patterns. Use when training agents in interactive environments, designing reward functions, or selecting an RL algorithm for a control or game task.
 ---
 
 ## Why This Exists

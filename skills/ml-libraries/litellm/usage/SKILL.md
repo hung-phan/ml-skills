@@ -1,6 +1,6 @@
 ---
-name: usage
-description: litellm core usage — unified LLM interface across providers, completion/acompletion, streaming, function calling, embeddings, Router load balancing, fallbacks, retries, cost tracking. Use when calling LLMs via litellm, setting up multi-provider routing, or configuring fallback strategies.
+name: litellm-usage
+description: litellm core usage — unified LLM interface across providers, completion/acompletion, streaming, function calling, embeddings, Router load balancing, fallbacks, retries, and cost tracking. Use when calling LLMs via litellm, setting up multi-provider routing, or configuring fallback strategies.
 ---
 
 # litellm Usage

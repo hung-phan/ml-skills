@@ -1,17 +1,6 @@
 ---
-name: ml-data-validation
-description: Data validation for ML pipelines -- schema enforcement, distribution drift detection, and quality gates that prevent garbage-in-garbage-out failures silently breaking models.
-triggers:
-  - data validation
-  - data quality
-  - schema validation
-  - data drift
-  - distribution shift
-  - pandera
-  - great expectations
-  - evidently
-  - data pipeline testing
-  - feature validation
+name: data-validation
+description: Data validation for ML pipelines — schema enforcement (Pandera, Great Expectations), distribution drift detection (Evidently), and quality gates. Use when building data pipeline tests, catching schema breaks before training, or monitoring feature distributions in production.
 ---
 
 # ML Data Validation

@@ -1,6 +1,6 @@
 ---
-name: SOM
-description: Self-Organizing Maps for topology-preserving dimensionality reduction, clustering, and visualization. Covers competitive learning, U-matrix, minisom patterns, and comparison with t-SNE/UMAP.
+name: som
+description: Self-Organizing Maps (SOMs) for topology-preserving dimensionality reduction, clustering, and visualization — competitive learning, U-matrix, minisom patterns, and comparison with t-SNE/UMAP. Use when an interpretable 2D map of high-dimensional data is needed or for unsupervised clustering with neighborhood structure.
 ---
 
 ## Why This Exists

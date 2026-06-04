@@ -1,6 +1,6 @@
 ---
 name: pandas
-description: Use when user wants to work with DataFrames, mentions pandas, groupby, merge, join, pivot, read_csv, parquet, or asks about data manipulation and SettingWithCopyWarning.
+description: Pandas DataFrames for tabular data — groupby, merge/join, pivot, read_csv/parquet, and idiomatic patterns including SettingWithCopyWarning fixes. Use when manipulating structured data, doing aggregations, or loading CSV/Parquet for ML pipelines.
 ---
 
 # Pandas Skill

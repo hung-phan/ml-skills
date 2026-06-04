@@ -1,6 +1,6 @@
 ---
-name: Regression & Classification
-description: Output layer design, loss functions (MSE, CE, Focal), metrics, class imbalance handling, multi-label patterns, ordinal regression, calibration, threshold tuning, regularization, and complete sklearn/PyTorch training loops.
+name: regression-classification
+description: Output layer and loss design for regression and classification — MSE/CE/Focal losses, metrics, class imbalance handling, multi-label and ordinal patterns, calibration, threshold tuning, and complete sklearn/PyTorch training loops. Use when picking the right output head, loss, and metric for a supervised task.
 ---
 
 ## Why This Exists

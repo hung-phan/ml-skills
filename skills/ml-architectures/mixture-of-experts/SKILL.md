@@ -1,7 +1,6 @@
 ---
-name: ml-moe
-description: Mixture of Experts (MoE) sparse architectures -- routing, load balancing, implementation
-trigger: MoE, mixture of experts, sparse model, expert routing, conditional computation, Mixtral, Switch Transformer, DeepSeek
+name: mixture-of-experts
+description: Mixture of Experts (MoE) sparse architectures — routing, load balancing, and implementation patterns. Use when scaling model capacity without proportional inference cost (Mixtral, Switch Transformer, DeepSeek), implementing token-level expert routing, or debugging load-balance loss.
 ---
 
 # Mixture of Experts (MoE)

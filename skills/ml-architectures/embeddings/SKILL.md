@@ -1,6 +1,6 @@
 ---
 name: embeddings
-description: Embeddings for retrieval and similarity -- mapping unstructured data to dense vectors for fast nearest-neighbor search, reranking, and cross-modal matching
+description: Embedding models for retrieval and similarity — sentence-transformers, BGE, E5, OpenAI/Voyage APIs, plus rerankers and cross-modal (CLIP) matching. Use when building RAG retrieval, semantic search, deduplication, or any pipeline that maps unstructured data to dense vectors.
 ---
 
 # Embeddings

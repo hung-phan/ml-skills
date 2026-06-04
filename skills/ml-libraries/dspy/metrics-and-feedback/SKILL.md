@@ -1,6 +1,6 @@
 ---
-name: metrics-and-feedback
-description: DSPy metric design patterns including F1, semantic similarity, LLM-as-judge, and GEPA feedback. Use when writing metrics for DSPy optimization, choosing between metric types, or designing feedback for GEPA's reflection loop.
+name: dspy-metrics-and-feedback
+description: DSPy metric design patterns — F1, semantic similarity, LLM-as-judge, and GEPA feedback. Use when writing metrics for DSPy optimization, choosing between metric types, or designing feedback for GEPA's reflection loop.
 ---
 
 # Metrics and Feedback

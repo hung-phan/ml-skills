@@ -1,6 +1,6 @@
 ---
-name: Autoencoder
-description: Use when building autoencoders, VAEs, anomaly detection, dimensionality reduction, or generative models with latent spaces
+name: autoencoder
+description: Autoencoders and variational autoencoders (VAEs) for compression, anomaly detection, dimensionality reduction, and latent-space generative modeling. Use when learning compact representations of data, detecting outliers via reconstruction error, or building a structured latent space for downstream generation.
 ---
 
 ## Why This Exists

@@ -1,6 +1,6 @@
 ---
-name: evaluation-patterns
-description: Design test cases and evaluation harnesses for DSPy optimization. Use when constructing dspy.Example datasets, designing LLM-as-judge metrics, or structuring train/val splits.
+name: dspy-evaluation-patterns
+description: Test case and evaluation harness design for DSPy optimization. Use when constructing dspy.Example datasets, designing LLM-as-judge metrics, or structuring train/val splits.
 ---
 
 # Evaluation Patterns

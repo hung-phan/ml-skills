@@ -1,10 +1,6 @@
 ---
 name: triton-lang
-description: |
-  OpenAI Triton GPU kernel language for writing high-performance custom deep learning primitives.
-  Triggers: triton kernel, custom GPU op, fused kernel, tl.load, tl.store, tl.dot, @triton.jit,
-  triton autotune, block-level programming, CUDA alternative, custom attention kernel, quantized ops,
-  tensor cores from Python, kernel fusion, GPU programming without CUDA
+description: OpenAI Triton GPU kernel language for high-performance deep learning primitives — block-level programming, @triton.jit, autotuning, tl.load/tl.store/tl.dot, and tensor cores from Python. Use when writing custom fused kernels, custom attention, or quantized ops without dropping to CUDA C++.
 ---
 
 # Triton (GPU Kernel Language)

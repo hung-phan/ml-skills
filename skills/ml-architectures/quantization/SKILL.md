@@ -1,6 +1,6 @@
 ---
 name: quantization
-description: Model quantization methods for reducing LLM memory footprint and accelerating inference -- PTQ, QAT, GPTQ, AWQ, bitsandbytes, FP8, GGUF
+description: Model quantization methods for shrinking LLM memory footprint and accelerating inference — PTQ, QAT, GPTQ, AWQ, bitsandbytes, FP8, and GGUF. Use when serving models on smaller GPUs, reducing inference cost, or choosing a quantization scheme for vLLM/llama.cpp deployment.
 ---
 
 # Quantization

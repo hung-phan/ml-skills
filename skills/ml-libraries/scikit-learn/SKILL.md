@@ -1,20 +1,6 @@
 ---
 name: sklearn
-description: Scikit-learn patterns for ML pipelines, preprocessing, model selection, ensembles, and calibration
-triggers:
-  - sklearn
-  - scikit-learn
-  - pipeline
-  - gridsearch
-  - cross validation
-  - feature engineering
-  - model selection
-  - ensemble
-  - calibration
-  - preprocessing
-  - ColumnTransformer
-  - VotingClassifier
-  - StackingClassifier
+description: Scikit-learn patterns — ML pipelines, ColumnTransformer preprocessing, model selection (GridSearchCV, cross-validation), ensembles (Voting, Stacking), and probability calibration. Use when building classical ML pipelines or any sklearn-based workflow.
 ---
 
 # Scikit-learn Patterns

@@ -1,6 +1,6 @@
 ---
 name: pytorch
-description: Use when user wants to build models with PyTorch, mentions nn.Module, tensors, autograd, DataLoader, DDP, or asks about custom training loops and GPU deep learning.
+description: PyTorch deep learning — nn.Module, tensors, autograd, DataLoader, custom training loops, and DDP. Use when building deep learning models with full control over training loops or any PyTorch-based workflow.
 ---
 
 # PyTorch Skill Reference

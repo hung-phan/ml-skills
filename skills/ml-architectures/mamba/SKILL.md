@@ -1,6 +1,6 @@
 ---
-name: Mamba
-description: State Space Models (SSMs) and Mamba architecture — selective state spaces with O(N) linear-time sequence modeling, hardware-aware parallel scan, Mamba-2 SSD duality, and hybrid architectures (Jamba).
+name: mamba
+description: State Space Models (SSMs) and Mamba — selective state spaces with O(N) linear-time sequence modeling, hardware-aware parallel scan, Mamba-2 SSD duality, and hybrid architectures (Jamba). Use when handling very long sequences where O(N²) attention is prohibitive or evaluating SSM-based alternatives to Transformers.
 ---
 
 ## Why This Exists

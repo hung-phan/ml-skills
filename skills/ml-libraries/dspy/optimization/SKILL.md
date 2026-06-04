@@ -1,6 +1,6 @@
 ---
-name: optimization
-description: DSPy optimizer configuration — MIPROv2, GEPA, BootstrapFewShot. Auto presets, before/after evaluation, optimizer selection guide. Use when choosing an optimizer, configuring trials, or doing before/after comparison.
+name: dspy-optimization
+description: DSPy optimizer configuration — MIPROv2, GEPA, BootstrapFewShot, auto presets, before/after evaluation, and optimizer selection. Use when choosing a DSPy optimizer, configuring trials, or doing before/after comparison.
 ---
 
 # Optimization

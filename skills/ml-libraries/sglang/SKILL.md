@@ -1,16 +1,6 @@
 ---
-description: SGLang - high-performance LLM/VLM serving with RadixAttention prefix caching, structured outputs, and frontend DSL for complex LLM programs
-globs: "**/*.py"
-triggers:
-  - "sglang"
-  - "radix attention"
-  - "prefix caching"
-  - "structured output"
-  - "constrained decoding"
-  - "LLM serving"
-  - "inference server"
-  - "batch inference"
-  - "multi-turn serving"
+name: sglang
+description: High-performance LLM/VLM serving with RadixAttention prefix caching, structured outputs, and a frontend DSL for complex LLM programs. Use when serving multi-turn conversations, branching/agentic workflows, or constrained generation (JSON, regex, grammar).
 ---
 
 # SGLang

@@ -1,6 +1,6 @@
 ---
-name: RNN
-description: Recurrent Neural Network architectures (Vanilla RNN, LSTM, GRU), bidirectional models, seq2seq with attention, teacher forcing, packed sequences, gradient clipping, and PyTorch nn.LSTM/nn.GRU patterns.
+name: rnn
+description: Recurrent neural network architectures (Vanilla RNN, LSTM, GRU), bidirectional models, seq2seq with attention, teacher forcing, packed sequences, and gradient clipping. Use when modeling sequential data with PyTorch nn.LSTM/nn.GRU or when transformer overhead is unjustified for short sequences.
 ---
 
 ## Why This Exists

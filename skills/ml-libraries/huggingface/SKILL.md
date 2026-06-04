@@ -1,18 +1,6 @@
 ---
 name: huggingface
-description: HuggingFace ecosystem — transformers, datasets, tokenizers, PEFT, Accelerate, Hub
-triggers:
-  - huggingface
-  - transformers
-  - AutoModel
-  - AutoTokenizer
-  - pipeline
-  - Trainer
-  - load_dataset
-  - PEFT
-  - LoRA
-  - QLoRA
-  - accelerate
+description: HuggingFace ecosystem — transformers (AutoModel/AutoTokenizer/Trainer), datasets, tokenizers, PEFT (LoRA/QLoRA), Accelerate, and Hub. Use when loading pretrained models, fine-tuning with Trainer, or working with HF datasets and tokenizers.
   - model hub
   - push_to_hub
   - fine-tune

@@ -1,5 +1,5 @@
 ---
-name: async-training
+name: dspy-async-training
 description: Async infrastructure for DSPy training — BackgroundEventLoop, contextvar propagation, syncify, and TrainingTemplate ABC. Use when training DSPy modules that call async services, or when you see "RuntimeError: no running event loop" during optimization.
 ---
 

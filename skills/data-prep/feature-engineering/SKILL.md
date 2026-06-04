@@ -1,6 +1,6 @@
 ---
-name: Feature Engineering
-description: Use when user needs to transform raw data into ML features -- numeric transforms (log, Box-Cox, binning), categorical encoding (target, WoE, one-hot), text vectorization (TF-IDF, embeddings), datetime cyclical encoding, interaction features, or automated feature generation with featuretools/tsfresh.
+name: feature-engineering
+description: Feature engineering — numeric transforms (log, Box-Cox, binning), categorical encoding (target, WoE, one-hot), text vectorization (TF-IDF, embeddings), datetime cyclical encoding, interactions, and automated generation with featuretools/tsfresh. Use when transforming raw data into ML-ready features.
 ---
 
 # Feature Engineering

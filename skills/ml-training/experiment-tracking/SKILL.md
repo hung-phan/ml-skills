@@ -1,6 +1,6 @@
 ---
 name: experiment-tracking
-description: Experiment tracking and model registry patterns for reproducible ML — MLflow, Weights & Biases, comparison, and best practices
+description: Experiment tracking and model registry — MLflow and Weights & Biases setup, run comparison, artifact logging, and reproducibility patterns. Use when adding tracking to a training script, comparing runs across hyperparameters, or registering models for deployment.
 ---
 
 # Experiment Tracking & Model Registry

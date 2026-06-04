@@ -5,13 +5,14 @@
   },
   "metadata": {
     "description": "Comprehensive ML skills library — architectures, libraries, training, inference, GPU kernels, and data prep.",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "plugins": [
     {
       "name": "ml-skills",
       "source": "./",
-      "description": "ML architectures, libraries, training, data prep, GPU kernels, and the meta skill-acquisition workflow"
+      "description": "ML architectures, libraries, training, data prep, GPU kernels, and the meta skill-acquisition workflow",
+      "category": "development"
     }
   ]
 }
