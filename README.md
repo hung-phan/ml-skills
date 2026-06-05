@@ -20,15 +20,83 @@ claude plugin validate .claude-plugin/plugin.json
 claude plugin add /path/to/ml-skills
 ```
 
+## How to Use
+
+Skills are invoked as slash commands. **The fastest way: ask `/ml-router` first whenever you're unsure.**
+
+### Start here: the router
+
+```
+/ml-router I need to fine-tune Llama-3 on a single GPU with limited VRAM
+/ml-router my XGBoost model passes CV but fails in production — what do I check?
+/ml-router I have a Kafka stream and want to build features for a fraud model
+```
+
+`/ml-router` reads your question and points you to the right sub-skill. Reach for it whenever the right skill isn't obvious.
+
+### Jump straight to a skill when you know what you want
+
+| You want to... | Invoke |
+|----------------|--------|
+| Pick a model architecture (CNN vs Transformer vs Mamba vs Diffusion...) | `/ml-architectures` |
+| Use a specific library (PyTorch, HuggingFace, vLLM, Ray, polars...) | `/ml-libraries` |
+| Set up training, eval, fine-tuning, distributed training | `/ml-training` |
+| Explore, validate, or feature-engineer data | `/data-prep` |
+| Write custom GPU kernels (Triton, TileLang) | `/gpu-lang` |
+| Add a new skill or fix one file | `/acquire-ml-skill` |
+| Audit + refresh a topic across multiple skills | `/refine-ml-skill` |
+
+Each top-level skill is itself a router — invoking `/ml-architectures` returns a decision table that points to the specific sub-skill (`attention/`, `transformer/`, `diffusion/`, ...). Sub-skills can also be invoked by their nested name from inside the parent skill.
+
+### Three usage patterns
+
+1. **Broad question, unsure where to start** → `/ml-router <your question>`. The router routes you.
+2. **You know the area** → `/ml-architectures`, `/ml-libraries`, `/ml-training`, `/data-prep`, or `/gpu-lang`. The skill's index points you to the right sub-skill.
+3. **You know the exact topic** → ask Claude directly ("show me the attention skill", "how do I do CUPED variance reduction?"). The relevant skill activates automatically because skill descriptions match the trigger phrases.
+
+### Workflow examples
+
+**End-to-end training a tabular model:**
+```
+/data-prep         → EDA, feature engineering, validation
+/ml-training       → split strategy, CV, Optuna, tracking
+                     (then: evaluation, online-experimentation when shipping)
+```
+
+**Fine-tuning an LLM:**
+```
+/ml-libraries       → HuggingFace, PEFT
+/ml-training        → unsloth-sft → unsloth-advanced (DPO/GRPO) → distributed-grpo
+/ml-architectures   → quantization (for inference)
+/ml-libraries       → vllm or sglang (for serving)
+```
+
+**Building a forecasting pipeline:**
+```
+/ml-router "tabular forecasting with covariates"
+  → time-series-features (or Chronos/AutoGluon-TS for zero-shot)
+  → training-workflow (purged + embargoed CV)
+  → online-learning (drift detection in production)
+```
+
+**Shipping a model to live traffic:**
+```
+/ml-training/online-experimentation   → A/B, CUPED, sequential testing, bandits
+/ml-training/online-learning          → drift detection, hot-swap, train/score separation
+```
+
 ## What's Included
 
 | Folder | Skills |
 |--------|--------|
-| `ml-architectures/` | Attention, ANN, CNN, RNN, Transformer, Mamba, MoE, GAN, Diffusion, GNN, LLM, Vision, RL, Autoencoder, Boltzmann, Quantization, Embeddings, Regression/Classification |
-| `ml-libraries/` | PyTorch, HuggingFace, scikit-learn, XGBoost, pandas, polars, numpy, Ray, DSPy, LiteLLM, vLLM, SGLang, Triton Inference Server, keras, seaborn, plotly |
-| `ml-training/` | Feature selection, training workflow, evaluation, DDP/FSDP, Unsloth SFT, Unsloth advanced (GRPO/DPO), Ray distributed SFT, distributed GRPO, experiment tracking |
-| `data-prep/` | EDA, feature engineering, data validation |
+| `ml-router/` | Top-level routing index — start here for any ML/DL task |
+| `ml-architectures/` | Attention, ANN, Audio, CNN, RNN, Transformer, Mamba, MoE, GAN, Diffusion, GNN, LLM, Vision, World Models, RL, SOM, Autoencoder, Boltzmann, Quantization, Embeddings, Regression/Classification |
+| `ml-libraries/` | PyTorch, HuggingFace, scikit-learn, XGBoost, pandas, polars, numpy, Ray, NeMo, DSPy, LiteLLM, vLLM, SGLang, Triton Inference Server, keras, seaborn, plotly |
+| `ml-training/` | feature-selection, training-workflow, evaluation, experiment-tracking, hf-jobs-workflow, **online-experimentation** (A/B, CUPED, bandits), **online-learning** (drift, incremental updates), data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced (GRPO/DPO), Ray distributed SFT, distributed GRPO |
+| `data-prep/` | EDA, feature engineering, **time-series-features** (lags, windows, point-process, purged CV), data validation |
 | `gpu-lang/` | Triton, TileLang |
+| `acquire-ml-skill/` | Meta-skill — add a new skill or update one file |
+| `refine-ml-skill/` | Meta-skill — deep-research + propagate updates across multiple skills |
 
 ## Skill Format
 
@@ -37,17 +105,26 @@ Every skill follows a consistent format:
 - **Code examples** — PyTorch and/or sklearn, realistic and runnable
 - **Decision tables** — when to use this vs alternatives
 - **References** — verified links to docs, papers, and repos
+- **See Also** — cross-references to adjacent skills so you can navigate the library by topic
 
 ## Contributing
 
-Use the `acquire-ml-skill` meta-skill to add or update skills — it encodes all the quality standards, folder conventions, and formatting rules for this library.
+Use the meta-skills to add or update skills — they encode the quality standards, folder conventions, and formatting rules.
 
-In Claude Code, activate it with:
+| Task | Use |
+|------|-----|
+| Add one new skill or lightly edit one file | `/acquire-ml-skill` |
+| Refresh a topic that spans multiple skills (e.g. a new attention variant touches `attention/`, `llm/`, `vllm/`) | `/refine-ml-skill` |
+| Audit coverage of an area after a major release | `/refine-ml-skill` |
+| Restructure the router itself | edit `ml-router/SKILL.md` directly |
+
+In Claude Code:
 
 ```
-/acquire-ml-skill
+/acquire-ml-skill add a skill on rotary positional embeddings (RoPE)
+/refine-ml-skill audit our attention coverage against FlashAttention-3
 ```
 
-Then tell Claude what topic to add or improve. The skill will guide research, writing, and placement automatically.
+Then tell Claude what to add or improve. The meta-skill will guide research, writing, placement, and cross-file consistency.
 
-See [`skills/acquire-ml-skill/SKILL.md`](skills/acquire-ml-skill/SKILL.md) for the full workflow.
+See [`skills/acquire-ml-skill/SKILL.md`](skills/acquire-ml-skill/SKILL.md) and [`skills/refine-ml-skill/SKILL.md`](skills/refine-ml-skill/SKILL.md) for the full workflows.

@@ -1,7 +1,7 @@
 {
   "name": "ml-skills",
   "description": "Comprehensive ML skills library — architectures, libraries, training, inference, GPU kernels, and data prep. Covers PyTorch, transformers, LLM fine-tuning, Triton kernels, and more.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "author": {
     "name": "hung-phan"
   },
