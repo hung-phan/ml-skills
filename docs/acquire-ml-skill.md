@@ -1,9 +1,6 @@
----
-name: acquire-ml-skill
-description: Create a new skill or make a light update to one existing skill in the ml-skills library. Guides research, writing, formatting, and quality checks for single-file work. Use when user says "add a skill", "create a skill for X", "update the skill for X", "fix the X skill", or "improve coverage of Y" AND the change is scoped to one file. For topics that span multiple skills (cross-cutting refresh, post-release audit, deep-research with propagation), use refine-ml-skill instead.
----
+# Acquire ML Skill — Maintainer Guideline
 
-# Acquire ML Skill
+> **Status**: Repo guideline for maintainers of the `ml-skills` plugin. Not a runtime skill — read this before adding or editing a single SKILL.md.
 
 Create a new skill or update one existing skill in the `ml-skills` plugin library.
 
@@ -11,13 +8,13 @@ Create a new skill or update one existing skill in the `ml-skills` plugin librar
 
 | Situation | Use |
 |-----------|-----|
-| New topic, no existing coverage | `acquire-ml-skill` |
-| One file is wrong / outdated, fix is local | `acquire-ml-skill` |
-| Topic spans 2+ folders (e.g. attention variants touch attention/, llm/, vllm/) | `refine-ml-skill` |
-| Need primary-source research before writing | `refine-ml-skill` (Phase 3 calls deep-research) |
-| Major library release, want to audit coverage | `refine-ml-skill` |
+| New topic, no existing coverage | `acquire-ml-skill` (this doc) |
+| One file is wrong / outdated, fix is local | `acquire-ml-skill` (this doc) |
+| Topic spans 2+ folders (e.g. attention variants touch attention/, llm/, vllm/) | [`refine-ml-skill.md`](refine-ml-skill.md) |
+| Need primary-source research before writing | [`refine-ml-skill.md`](refine-ml-skill.md) (Phase 3 calls deep-research) |
+| Major library release, want to audit coverage | [`refine-ml-skill.md`](refine-ml-skill.md) |
 
-If you start in `acquire-ml-skill` and discover the change actually touches multiple files, **stop and switch to `refine-ml-skill`** — don't try to coordinate cross-file updates from here.
+If you start under this guideline and discover the change actually touches multiple files, **stop and switch to [`refine-ml-skill.md`](refine-ml-skill.md)** — don't try to coordinate cross-file updates from here.
 
 ## Phase 0 — Intake (do this BEFORE research)
 
@@ -58,8 +55,6 @@ Skills live under the `skills/` directory. Each skill is a folder containing a s
 ```
 skills/
 ├── ml-router/                   (top-level router — entry point for any ML/DL task)
-├── acquire-ml-skill/            (this skill — single-file contributor meta-skill)
-├── refine-ml-skill/             (deep-research + cross-repo propagation meta-skill)
 ├── ml-architectures/            (ANN, CNN, RNN, Transformer, Attention, MoE, Mamba,
 │                                 GAN, Diffusion, GNN, LLM, Vision, RL, Autoencoder,
 │                                 Boltzmann, Quantization, Embeddings, Regression/Classification)
@@ -73,7 +68,7 @@ skills/
 └── gpu-lang/                    (triton, tilelang)
 ```
 
-To find the plugin root from any machine: start from the directory containing this file and go up two levels (`skills/acquire-ml-skill/SKILL.md` → `skills/` → repo root).
+The two meta-guidelines (`acquire-ml-skill.md`, `refine-ml-skill.md`) live in `docs/` — not under `skills/` — because they're for repo maintainers and would otherwise burn ~360 tokens of context every session.
 
 ## Quality Standards
 

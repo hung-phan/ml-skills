@@ -1,15 +1,12 @@
----
-name: refine-ml-skill
-description: Deep-research an ML/DL topic and propagate findings across every related skill in this library. Use when the user says "refine the X skill", "research Y and update all skills that touch it", "the X skill is outdated, fix it", "audit our coverage of Z", or when a topic spans multiple folders (e.g. a new attention variant touches attention/, llm/, transformer/, vllm/). Differs from acquire-ml-skill, which is for adding one new skill or making a light single-file edit — use refine when changes must land in multiple files coherently.
----
+# Refine ML Skill — Maintainer Guideline
 
-# Refine ML Skill
+> **Status**: Repo guideline for maintainers of the `ml-skills` plugin. Not a runtime skill — read this when a topic refresh spans multiple files.
 
 Deep-research a topic, then propagate the findings across every skill it touches — keeping cross-file claims consistent and links fresh.
 
 ## Why This Exists
 
-**Problem**: ML evolves fast. A change in one area (a new attention variant, a deprecated API, a faster training recipe) almost always touches several skills. `acquire-ml-skill` handles one file at a time; nothing in the library coordinates a multi-file refresh, so skills drift out of sync (LLM talks about MHA while attention/ has switched to MLA; vllm/ recommends an old quant flag that quantization/ no longer mentions).
+**Problem**: ML evolves fast. A change in one area (a new attention variant, a deprecated API, a faster training recipe) almost always touches several skills. [`acquire-ml-skill.md`](acquire-ml-skill.md) handles one file at a time; nothing in the library coordinates a multi-file refresh, so skills drift out of sync (LLM talks about MHA while attention/ has switched to MLA; vllm/ recommends an old quant flag that quantization/ no longer mentions).
 
 **Key insight**: Topic-level research first, file-level edits second. Gather one authoritative picture from primary sources, then sweep every skill that should reflect it — so all references to the same concept tell the same story.
 
@@ -19,7 +16,7 @@ Deep-research a topic, then propagate the findings across every skill it touches
 - The user asks to "audit" or "refresh" coverage of an area.
 - After a major library release (PyTorch X, vLLM Y, HF transformers Z) where APIs may have changed.
 
-For "add one new skill" or "fix one typo", use `acquire-ml-skill` instead.
+For "add one new skill" or "fix one typo", use [`acquire-ml-skill.md`](acquire-ml-skill.md) instead.
 
 ## Critical Thinking, Not Template-Filling
 
@@ -29,7 +26,7 @@ The phases below are a scaffold, not a recipe. The hard parts are the judgment c
 - **Blast radius (Phase 3)**: `grep` finds keyword matches, but the writer has to decide which matches are *the same concept* (a renamed API still appearing under its old name) versus *false positives* (the word "attention" used in a non-technical sentence).
 - **Canonical home (Phase 5)**: When three folders all reasonably cover a topic, only one should hold the deep treatment. Which one? Pick by where future readers will most naturally look first, not by alphabetical order.
 - **What "consistency" means (Phase 6)**: It's not search-and-replace. Two skills can use different framings of the same fact for different audiences — the rule is they must not *contradict*, not that they must be identical.
-- **When to stop (Phase 8)**: If research keeps surfacing more affected skills, that's a signal the topic deserves its own folder — hand off to `acquire-ml-skill` instead of widening this update indefinitely.
+- **When to stop (Phase 8)**: If research keeps surfacing more affected skills, that's a signal the topic deserves its own folder — hand off to [`acquire-ml-skill.md`](acquire-ml-skill.md) instead of widening this update indefinitely.
 
 If any phase feels like rote work, you're missing the decision that should be happening there.
 
@@ -63,7 +60,7 @@ Synthesize the intake into a one-paragraph scope statement before any research h
 
 This becomes the spec for the rest of the workflow — and the lead paragraph of the Phase 7 report.
 
-### Phase 2 — Map the blast radius
+### Phase 3 — Map the blast radius
 
 Before researching, find every skill that *currently* references the topic. Don't trust memory.
 
@@ -82,7 +79,7 @@ List the matches in a short table:
 
 Also list **likely-but-missing** skills — folders that *should* mention the topic but don't. Those become add-or-extend targets.
 
-### Phase 3 — Deep research
+### Phase 4 — Deep research
 
 Invoke the `deep-research` skill with the refined topic as the question. Pass the scope hint so it knows the audience is an ML practitioner who already understands fundamentals.
 
@@ -95,7 +92,7 @@ What the research output must contain:
 
 Verify every URL with `curl -sI <url> | head -1` before they go into any skill.
 
-### Phase 4 — Decide the per-file plan
+### Phase 5 — Decide the per-file plan
 
 For each affected skill, decide one of:
 
@@ -105,25 +102,25 @@ For each affected skill, decide one of:
 | **Extend** | The skill mentions the topic in passing; promote it to a proper subsection with code + decision table. |
 | **Add cross-reference** | The skill is adjacent and should link to the canonical home, not duplicate it. |
 | **Leave alone** | The match was a false positive (different concept, same word). |
-| **Create new sub-skill** | The topic deserves its own folder; hand off to `acquire-ml-skill` for the actual creation. |
+| **Create new sub-skill** | The topic deserves its own folder; hand off to [`acquire-ml-skill.md`](acquire-ml-skill.md) for the actual creation. |
 
 Pick **one canonical home** for the topic — the folder where the deepest treatment lives. Other skills get short mentions + a link to the canonical home, never duplicated paragraphs.
 
-### Phase 5 — Apply edits
+### Phase 6 — Apply edits
 
-For every file marked update/extend, satisfy the same quality standards as `acquire-ml-skill`:
+For every file marked update/extend, satisfy the same quality standards as [`acquire-ml-skill.md`](acquire-ml-skill.md):
 - `## Why This Exists` if missing.
 - Decision table vs. alternatives.
 - Code example (PyTorch + framework-agnostic where applicable).
 - `## References` with verified links.
 
-Cross-file consistency rules (the whole point of this skill):
+Cross-file consistency rules (the whole point of this guideline):
 - The same concept must use the same name in every file (don't call it "MQA" in one and "Multi-Query Attention" in another without the abbreviation).
 - The canonical home is linked from every other mention, with relative paths from the editing file (`../../ml-architectures/attention/`).
 - Decision tables agree — if `attention/` says GQA is the default for Llama-3, `llm/` cannot still claim MHA.
 - Version claims agree — if PyTorch 2.5 deprecates an API in one file, no other file should still recommend it.
 
-### Phase 6 — Verify
+### Phase 7 — Verify
 
 Run before reporting done:
 
@@ -140,12 +137,12 @@ grep -rn "](\.\./" skills/ | <spot-check the relative paths>
 
 If the router (`ml-router/SKILL.md`) needs a new row because a sub-skill was added or a problem-type mapping changed, edit it too.
 
-### Phase 7 — Report
+### Phase 8 — Report
 
 Summarize for the user, in this order:
 1. What the topic now says, in two sentences.
 2. Files touched, grouped by action (updated / extended / linked / unchanged).
-3. Anything intentionally left for a follow-up (e.g. new sub-skill candidate worth filing via `acquire-ml-skill`).
+3. Anything intentionally left for a follow-up (e.g. new sub-skill candidate worth filing via [`acquire-ml-skill.md`](acquire-ml-skill.md)).
 
 ## Anti-Patterns
 
@@ -153,19 +150,19 @@ Summarize for the user, in this order:
 - Duplicating the topic's full treatment in every file — pick a canonical home, link the rest.
 - Trusting memory for "what changed recently" — always pull primary sources via `deep-research`.
 - Skipping link verification because "it's the official docs URL" — official URLs change too.
-- Reaching for this skill to add one new isolated skill — that's `acquire-ml-skill`.
+- Reaching for this guideline to add one new isolated skill — that's [`acquire-ml-skill.md`](acquire-ml-skill.md).
 - Renaming or removing existing sections that aren't actually wrong, just to "tidy up" — preserve unrelated content.
 
 ## When to Hand Off
 
 | Situation | Hand off to |
 |-----------|-------------|
-| The research surfaced a topic deserving a new sub-skill | `acquire-ml-skill` (create), then come back here to wire references |
-| Just one file needs a small fix | `acquire-ml-skill` (update workflow) |
-| The router itself is structurally wrong | edit `ml-router/SKILL.md` directly |
+| The research surfaced a topic deserving a new sub-skill | [`acquire-ml-skill.md`](acquire-ml-skill.md) (create), then come back here to wire references |
+| Just one file needs a small fix | [`acquire-ml-skill.md`](acquire-ml-skill.md) (update workflow) |
+| The router itself is structurally wrong | edit `skills/ml-router/SKILL.md` directly |
 
 ## References
 
-- `acquire-ml-skill/SKILL.md` — quality standards every edited skill must satisfy.
-- `ml-router/SKILL.md` — the routing index; update if a sub-skill is added or its scope shifts.
-- `deep-research` skill — invoke for primary-source gathering in Phase 3.
+- [`acquire-ml-skill.md`](acquire-ml-skill.md) — quality standards every edited skill must satisfy.
+- `skills/ml-router/SKILL.md` — the routing index; update if a sub-skill is added or its scope shifts.
+- `deep-research` skill — invoke for primary-source gathering in Phase 4.

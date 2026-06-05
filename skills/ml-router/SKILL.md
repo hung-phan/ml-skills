@@ -60,8 +60,8 @@ If `grep` returns multiple hits for the same keyword, the **canonical home** is 
 | `ml-training/` | feature-selection, training-workflow, evaluation, llm-evaluation, prompt-engineering, inference-optimization, model-merging, gradient-free-optimization, experiment-tracking, hf-jobs-workflow, online-experimentation, online-learning, data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced, Ray distributed SFT, distributed GRPO |
 | `data-prep/` | EDA, feature engineering, time-series features, dataset curation (FM data), data validation |
 | `gpu-lang/` | Triton (block-level Python kernels), TileLang (shared memory + warp-level Python kernels) |
-| `acquire-ml-skill/` | Meta-skill for creating a new skill or making a light single-file update. Requires critical thinking — placement, decision tables, and trigger phrases all need judgment, not boilerplate. |
-| `refine-ml-skill/` | Meta-skill for deep-researching a topic and propagating updates across every skill it touches. Requires critical thinking — blast-radius mapping, picking a canonical home, and cross-file consistency are judgment calls. |
+
+> Maintainer guidelines (not runtime skills) live in `docs/`: [`docs/acquire-ml-skill.md`](../../docs/acquire-ml-skill.md) for single-file work, [`docs/refine-ml-skill.md`](../../docs/refine-ml-skill.md) for cross-file refreshes.
 
 ## By Workflow Stage
 
@@ -231,14 +231,14 @@ For "which model architecture?" jump straight to `ml-architectures/SKILL.md` —
 
 ## Contributing to this library
 
-Both contributor skills require **critical thinking, not just template-filling**. Don't reach for them expecting a checklist that produces a finished skill — they encode judgment about placement, scope, blast radius, and cross-file consistency that you have to actually exercise.
+Maintainer guidelines live in `docs/` (kept out of `skills/` so they don't load into every user's context). Both require **critical thinking, not just template-filling** — they encode judgment about placement, scope, blast radius, and cross-file consistency that you have to actually exercise.
 
-| Task | Go to |
-|------|-------|
-| Add a new skill (single file, deliberate placement) | `acquire-ml-skill/` |
-| Light edit to one existing skill | `acquire-ml-skill/` (update workflow) |
-| Deep-research a topic and propagate updates across all related skills | `refine-ml-skill/` |
-| Audit / refresh coverage of an area after a major release | `refine-ml-skill/` |
-| Restructure the router itself | edit `ml-router/SKILL.md` directly |
+| Task | Read |
+|------|------|
+| Add a new skill (single file, deliberate placement) | [`docs/acquire-ml-skill.md`](../../docs/acquire-ml-skill.md) |
+| Light edit to one existing skill | [`docs/acquire-ml-skill.md`](../../docs/acquire-ml-skill.md) (update workflow) |
+| Deep-research a topic and propagate updates across all related skills | [`docs/refine-ml-skill.md`](../../docs/refine-ml-skill.md) |
+| Audit / refresh coverage of an area after a major release | [`docs/refine-ml-skill.md`](../../docs/refine-ml-skill.md) |
+| Restructure the router itself | edit `skills/ml-router/SKILL.md` directly |
 
-Rule of thumb: **one file in scope → `acquire-ml-skill`. Two or more files in scope, or stale coverage suspected → `refine-ml-skill`.**
+Rule of thumb: **one file in scope → `docs/acquire-ml-skill.md`. Two or more files in scope, or stale coverage suspected → `docs/refine-ml-skill.md`.**

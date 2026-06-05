@@ -43,8 +43,6 @@ Skills are invoked as slash commands. **The fastest way: ask `/ml-router` first 
 | Set up training, eval, fine-tuning, distributed training | `/ml-training` |
 | Explore, validate, or feature-engineer data | `/data-prep` |
 | Write custom GPU kernels (Triton, TileLang) | `/gpu-lang` |
-| Add a new skill or fix one file | `/acquire-ml-skill` |
-| Audit + refresh a topic across multiple skills | `/refine-ml-skill` |
 
 Each top-level skill is itself a router — invoking `/ml-architectures` returns a decision table that points to the specific sub-skill (`attention/`, `transformer/`, `diffusion/`, ...). Sub-skills can also be invoked by their nested name from inside the parent skill.
 
@@ -109,8 +107,10 @@ Each top-level skill is itself a router — invoking `/ml-architectures` returns
 | `ml-training/` | feature-selection, training-workflow, **evaluation** (classical) + **llm-evaluation** (FM-specific), **prompt-engineering**, **inference-optimization**, **model-merging**, **gradient-free-optimization**, experiment-tracking, hf-jobs-workflow, **online-experimentation** (A/B, CUPED, bandits), **online-learning** (drift, incremental updates), data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced (GRPO/DPO), Ray distributed SFT, distributed GRPO |
 | `data-prep/` | EDA, feature engineering, **time-series-features** (lags, windows, point-process, purged CV), **dataset-curation** (FM data: SFT, preference, CoT, synthesis, dedup), data validation |
 | `gpu-lang/` | Triton, TileLang |
-| `acquire-ml-skill/` | Meta-skill — add a new skill or update one file |
-| `refine-ml-skill/` | Meta-skill — deep-research + propagate updates across multiple skills |
+
+> **Maintainer guidelines** (not runtime skills) live in `docs/`:
+> - [`docs/acquire-ml-skill.md`](docs/acquire-ml-skill.md) — add a new skill or update one file
+> - [`docs/refine-ml-skill.md`](docs/refine-ml-skill.md) — deep-research + propagate updates across multiple skills
 
 ## Skill Format
 
@@ -123,22 +123,13 @@ Every skill follows a consistent format:
 
 ## Contributing
 
-Use the meta-skills to add or update skills — they encode the quality standards, folder conventions, and formatting rules.
+Maintainer guidelines live in `docs/` (not under `skills/`, so they don't burn context tokens for end users). Read the relevant one before editing:
 
-| Task | Use |
-|------|-----|
-| Add one new skill or lightly edit one file | `/acquire-ml-skill` |
-| Refresh a topic that spans multiple skills (e.g. a new attention variant touches `attention/`, `llm/`, `vllm/`) | `/refine-ml-skill` |
-| Audit coverage of an area after a major release | `/refine-ml-skill` |
-| Restructure the router itself | edit `ml-router/SKILL.md` directly |
+| Task | Read |
+|------|------|
+| Add one new skill or lightly edit one file | [`docs/acquire-ml-skill.md`](docs/acquire-ml-skill.md) |
+| Refresh a topic that spans multiple skills (e.g. a new attention variant touches `attention/`, `llm/`, `vllm/`) | [`docs/refine-ml-skill.md`](docs/refine-ml-skill.md) |
+| Audit coverage of an area after a major release | [`docs/refine-ml-skill.md`](docs/refine-ml-skill.md) |
+| Restructure the router itself | edit `skills/ml-router/SKILL.md` directly |
 
-In Claude Code:
-
-```
-/acquire-ml-skill add a skill on rotary positional embeddings (RoPE)
-/refine-ml-skill audit our attention coverage against FlashAttention-3
-```
-
-Then tell Claude what to add or improve. The meta-skill will guide research, writing, placement, and cross-file consistency.
-
-See [`skills/acquire-ml-skill/SKILL.md`](skills/acquire-ml-skill/SKILL.md) and [`skills/refine-ml-skill/SKILL.md`](skills/refine-ml-skill/SKILL.md) for the full workflows.
+These docs encode the quality standards, folder conventions, intake questions, and formatting rules. Hand them to Claude as the spec for the change you want — e.g. "follow `docs/acquire-ml-skill.md` to add a skill on rotary positional embeddings (RoPE)".
