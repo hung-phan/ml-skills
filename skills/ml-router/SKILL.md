@@ -7,14 +7,58 @@ description: Use FIRST for any ML/DL task to pick the right ml-skills sub-skill 
 
 Pick the right sub-skill from any of three angles: **by domain folder**, **by workflow stage**, or **by problem type**. When in doubt, start with the problem-type table — it's the densest mapping.
 
+If the tables below don't surface what you need, **grep the library directly** — it's faster than reading every index.
+
+## Grep the Library
+
+The tables below cover the common cases. When you know a keyword (a paper name, an API, a library, a technique) but not which skill it lives in, search the markdown directly. Skills are plain `SKILL.md` files under `skills/<folder>/<topic>/`, so `grep` and `find` work exactly as you'd expect.
+
+| You know… | Run |
+|-----------|-----|
+| A keyword or term (e.g. "FlashAttention", "BM25", "DPO") | `grep -rli "<keyword>" skills/` |
+| An exact API or class name (case-sensitive) | `grep -rl "<symbol>" skills/` |
+| A topic and want to see *every* skill that mentions it | `grep -rl "<topic>" skills/ \| sort` |
+| The folder, want to list its sub-skills | `ls skills/<folder>/` |
+| Want a one-line summary of every skill | `for f in skills/*/SKILL.md skills/*/*/SKILL.md; do echo "$f:"; grep -m1 "^description:" "$f"; done` |
+| Want only sub-skill files (not folder indexes) | `find skills -mindepth 3 -name SKILL.md` |
+
+Decision rule:
+- **Workflow-stage tables** when you know *what step you're on* (e.g. "I'm picking metrics" → evaluation).
+- **Problem-type tables** when you know *what kind of problem you have* (e.g. tabular forecasting).
+- **`grep`** when you know *the keyword* but not which skill owns it (e.g. "where do we mention CUPED?").
+- **Domain folders** when you want the full menu in a category.
+
+Examples:
+
+```bash
+# Where do we cover speculative decoding?
+grep -rli "speculative" skills/
+# → skills/ml-training/inference-optimization/SKILL.md
+# → skills/ml-architectures/sampling-strategies/SKILL.md
+
+# Find every skill that touches GQA / KV-cache
+grep -rl "GQA\|KV.cache" skills/
+
+# Anything mentioning a specific paper / arXiv id
+grep -rl "2201.11903" skills/   # CoT (Wei et al. 2022)
+
+# Which skills point at vLLM?
+grep -rl "vllm/" skills/
+
+# What sub-skills exist under ml-architectures?
+ls skills/ml-architectures/
+```
+
+If `grep` returns multiple hits for the same keyword, the **canonical home** is usually the deepest skill folder (e.g. for FlashAttention: `ml-architectures/attention/` is the deep treatment; other files cross-reference it). The `## See Also` block at the bottom of each `SKILL.md` confirms which one is canonical.
+
 ## Domain Folders
 
 | Folder | Covers |
 |--------|--------|
-| `ml-architectures/` | Attention, ANN, Audio, CNN, RNN, Transformer, Mamba, MoE, GAN, Diffusion, GNN, LLM, Vision, World Models (JEPA / Dreamer / MuZero), RL, SOM, Autoencoder, Boltzmann, Embeddings, Quantization, Regression/Classification |
-| `ml-libraries/` | pandas, numpy, polars, seaborn, plotly, keras, pytorch, scikit-learn, xgboost, huggingface, dspy, litellm, ray, vllm, sglang, triton-inference-server |
-| `ml-training/` | feature-selection, training-workflow, evaluation, experiment-tracking, data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced, Ray distributed SFT, distributed GRPO |
-| `data-prep/` | EDA, feature engineering, data validation |
+| `ml-architectures/` | Agents, AI App Architecture, ANN, Attention, Audio, Autoencoder, Boltzmann, CNN, Diffusion, Embeddings, GAN, GNN, LLM, Mamba, Mixture of Experts, Neural Combinatorial Optimization, Quantization, RAG, Regression/Classification, Reinforcement Learning, RNN, Sampling Strategies, SOM, Transformer, Vision, World Models (JEPA / Dreamer / MuZero) |
+| `ml-libraries/` | pandas, numpy, polars, seaborn, plotly, keras, pytorch, scikit-learn, xgboost, huggingface, nemo, dspy, litellm, ray, vllm, sglang, triton-inference-server |
+| `ml-training/` | feature-selection, training-workflow, evaluation, llm-evaluation, prompt-engineering, inference-optimization, model-merging, gradient-free-optimization, experiment-tracking, hf-jobs-workflow, online-experimentation, online-learning, data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced, Ray distributed SFT, distributed GRPO |
+| `data-prep/` | EDA, feature engineering, time-series features, dataset curation (FM data), data validation |
 | `gpu-lang/` | Triton (block-level Python kernels), TileLang (shared memory + warp-level Python kernels) |
 | `acquire-ml-skill/` | Meta-skill for creating a new skill or making a light single-file update. Requires critical thinking — placement, decision tables, and trigger phrases all need judgment, not boilerplate. |
 | `refine-ml-skill/` | Meta-skill for deep-researching a topic and propagating updates across every skill it touches. Requires critical thinking — blast-radius mapping, picking a canonical home, and cross-file consistency are judgment calls. |
@@ -25,20 +69,31 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 |-------|-------|
 | 1. Understand the data | `data-prep/eda/` |
 | 2. Validate/clean data | `data-prep/data-validation/` |
-| 3. Engineer features | `data-prep/feature-engineering/` |
+| 3. Engineer features (classical ML) | `data-prep/feature-engineering/` |
+| 3b. Curate FM datasets (SFT, preference, CoT, RAG indexing) | `data-prep/dataset-curation/` |
 | 4. Pick a model | `ml-architectures/SKILL.md` (decision tree at the bottom) |
 | 5. Pick a library | `ml-libraries/SKILL.md` |
 | 6. Train | `ml-training/training-workflow/` |
 | 6b. Run training on managed cloud GPUs (HF Jobs) | `ml-training/hf-jobs-workflow/` |
+| 6c. Black-box / non-differentiable optimization (HPO via CMA-ES, NAS, ES) | `ml-training/gradient-free-optimization/` |
 | 7. Track experiments | `ml-training/experiment-tracking/` |
-| 8. Evaluate | `ml-training/evaluation/` |
+| 8. Evaluate (classical ML metrics) | `ml-training/evaluation/` |
+| 8b. Evaluate an LLM, RAG, or agent (judges, faithfulness, benchmarks) | `ml-training/llm-evaluation/` |
 | 9. Scale training across GPUs | `ml-training/data-parallel/` (DDP/FSDP) or `ml-libraries/ray/` |
 | 10. Fine-tune an LLM | `ml-training/unsloth-sft/` → `ml-training/unsloth-advanced/` → `ml-training/distributed-grpo/` |
+| 10b. Combine multiple finetuned checkpoints | `ml-training/model-merging/` |
 | 11. Compress for inference | `ml-architectures/quantization/` |
+| 11b. Optimize LLM inference latency / cost (engine, batching, spec-decoding, caching) | `ml-training/inference-optimization/` |
 | 12. Serve | `ml-libraries/vllm/`, `ml-libraries/sglang/`, or `ml-libraries/triton-inference-server/` |
+| 12a. Design / debug the prompt | `ml-training/prompt-engineering/` |
+| 12b. Tune LLM decoding (temperature, top-p, min-p, structured output, self-consistency) | `ml-architectures/sampling-strategies/` |
+| 12c. Build a RAG pipeline (chunk, retrieve, rerank, eval faithfulness) | `ml-architectures/rag/` |
+| 12d. Build a tool-using / autonomous agent | `ml-architectures/agents/` |
+| 12e. Architect the full LLM app (gateway, guardrails, caching, observability) | `ml-architectures/ai-app-architecture/` |
 | 13. Ship to live traffic (A/B, bandits, canary) | `ml-training/online-experimentation/` |
 | 14. Adapt to streaming data, drift detection, hot-swap weights | `ml-training/online-learning/` |
 | 15. Write custom GPU kernels | `gpu-lang/triton/` or `gpu-lang/tilelang/` |
+| 16. Solve combinatorial problems with neural heuristics (TSP/VRP/JSSP/MaxCut/SAT) | `ml-architectures/neural-combinatorial-optimization/` |
 
 ## By Problem Type
 
@@ -77,11 +132,20 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | DPO, ORPO, KTO preference tuning | `ml-training/unsloth-advanced/` |
 | GRPO / RLHF at scale | `ml-training/distributed-grpo/` |
 | Distributed SFT across many GPUs | `ml-training/ray-distributed-sft/` |
-| Prompt programs, structured generation | `ml-libraries/dspy/` |
+| Prompt programs, automated prompt optimization | `ml-libraries/dspy/` (programmatic) or `ml-training/prompt-engineering/` (hand-crafted) |
+| Design / debug prompts; defend against injection | `ml-training/prompt-engineering/` |
+| Tune decoding (temperature, top-p, min-p, structured, self-consistency) | `ml-architectures/sampling-strategies/` |
 | Multi-provider LLM calls | `ml-libraries/litellm/` |
 | High-throughput LLM serving | `ml-libraries/vllm/` or `ml-libraries/sglang/` |
+| Speed up / reduce cost of LLM inference (engine choice, batching, spec-decoding, caching) | `ml-training/inference-optimization/` |
 | Quantize an LLM (AWQ/GPTQ/FP8/GGUF) | `ml-architectures/quantization/` |
-| RAG — embeddings + vector search | `ml-architectures/embeddings/` |
+| RAG pipeline (chunk, retrieve+rerank, faithfulness eval) | `ml-architectures/rag/` |
+| Just embeddings + vector search | `ml-architectures/embeddings/` |
+| Tool-using / autonomous agent | `ml-architectures/agents/` |
+| Architect a production LLM app (gateway, guardrails, caching, observability) | `ml-architectures/ai-app-architecture/` |
+| Evaluate the LLM, RAG, or agent (judges, faithfulness, benchmarks) | `ml-training/llm-evaluation/` |
+| Curate SFT / preference / RAG datasets for FMs | `data-prep/dataset-curation/` |
+| Combine multiple finetuned checkpoints (TIES, DARE, SLERP) | `ml-training/model-merging/` |
 
 ### Generative
 
@@ -103,8 +167,11 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | DDP / FSDP / pipeline parallelism | `ml-training/data-parallel/` |
 | Distribute work with Ray | `ml-libraries/ray/` |
 | Track runs (W&B, MLflow, TensorBoard) | `ml-training/experiment-tracking/` |
-| Pick metrics, avoid leakage, calibrate | `ml-training/evaluation/` |
+| Pick metrics, avoid leakage, calibrate (classical ML) | `ml-training/evaluation/` |
+| Eval LLM, RAG, agent | `ml-training/llm-evaluation/` |
 | Feature selection | `ml-training/feature-selection/` |
+| Black-box / non-differentiable optimization (HPO via CMA-ES, NAS, ES, BayesOpt) | `ml-training/gradient-free-optimization/` |
+| Combine multiple finetuned checkpoints | `ml-training/model-merging/` |
 
 ### Inference & deployment
 
@@ -114,6 +181,8 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | Serve LLMs with structured / constrained output | `ml-libraries/sglang/` |
 | Serve any model in production (REST/gRPC) | `ml-libraries/triton-inference-server/` |
 | Reduce memory / latency | `ml-architectures/quantization/` + `ml-architectures/attention/` (GQA/MLA/FlashAttention) |
+| Optimize end-to-end LLM serving (TTFT/TPOT, batching, spec-decoding, prefix cache) | `ml-training/inference-optimization/` |
+| Architect the full LLM app (gateway, guardrails, caching, observability) | `ml-architectures/ai-app-architecture/` |
 | A/B test, canary, multi-armed bandit a model rollout | `ml-training/online-experimentation/` |
 | Hot-swap model weights, drift monitoring, online updates | `ml-training/online-learning/` |
 | Custom CUDA kernel in Python | `gpu-lang/triton/` |

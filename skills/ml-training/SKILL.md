@@ -28,7 +28,12 @@ description: Complete ML training pipeline — feature selection, training loops
 | Which features matter? | `feature-selection/` |
 | Cross-validation, Optuna tuning | `training-workflow/` |
 | Run training on HF Jobs / managed cloud GPUs | `hf-jobs-workflow/` |
-| Metrics, imbalanced classes, calibration | `evaluation/` |
+| Metrics, imbalanced classes, calibration (classical ML) | `evaluation/` |
+| Evaluate an LLM, RAG, or agent — judges, faithfulness, benchmarks | `llm-evaluation/` |
+| Design / debug prompts; defend against injection | `prompt-engineering/` |
+| Speed up or shrink LLM inference, pick a serving engine | `inference-optimization/` |
+| Combine multiple finetuned checkpoints without retraining | `model-merging/` |
+| Black-box / non-differentiable optimization (HPO, NAS, ES, BayesOpt) | `gradient-free-optimization/` |
 | Fine-tune LLM on 1 GPU | `unsloth-sft/` |
 | GRPO/DPO/vision on 1 GPU | `unsloth-advanced/` |
 | Distribute SFT across GPUs | `ray-distributed-sft/` |

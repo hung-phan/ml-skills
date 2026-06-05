@@ -65,10 +65,24 @@ Each top-level skill is itself a router — invoking `/ml-architectures` returns
 
 **Fine-tuning an LLM:**
 ```
+/data-prep          → dataset-curation (curate SFT / preference / CoT data)
 /ml-libraries       → HuggingFace, PEFT
 /ml-training        → unsloth-sft → unsloth-advanced (DPO/GRPO) → distributed-grpo
+/ml-training        → llm-evaluation (build eval scorecard, judge, hallucination check)
+/ml-training        → model-merging (combine specialist checkpoints — TIES/DARE/SLERP)
 /ml-architectures   → quantization (for inference)
+/ml-training        → inference-optimization (TTFT/TPOT, spec-decoding, prefix cache)
 /ml-libraries       → vllm or sglang (for serving)
+```
+
+**Building an LLM application (RAG / agent / production):**
+```
+/ml-training        → prompt-engineering (chat templates, CoT, injection defenses)
+/ml-architectures   → rag (chunking, BM25/dense/hybrid, rerankers, faithfulness eval)
+/ml-architectures   → agents (tool use, ReAct, function calling, eval benchmarks)
+/ml-architectures   → sampling-strategies (temperature, top-p, structured generation)
+/ml-architectures   → ai-app-architecture (gateway, guardrails, caching, observability)
+/ml-training        → llm-evaluation (judges, faithfulness, regression-test prompts)
 ```
 
 **Building a forecasting pipeline:**
@@ -90,10 +104,10 @@ Each top-level skill is itself a router — invoking `/ml-architectures` returns
 | Folder | Skills |
 |--------|--------|
 | `ml-router/` | Top-level routing index — start here for any ML/DL task |
-| `ml-architectures/` | Attention, ANN, Audio, CNN, RNN, Transformer, Mamba, MoE, GAN, Diffusion, GNN, LLM, Vision, World Models, RL, SOM, Autoencoder, Boltzmann, Quantization, Embeddings, Regression/Classification |
+| `ml-architectures/` | Agents, AI App Architecture, ANN, Attention, Audio, Autoencoder, Boltzmann, CNN, Diffusion, Embeddings, GAN, GNN, LLM, Mamba, MoE, **Neural Combinatorial Optimization**, Quantization, **RAG**, Regression/Classification, Reinforcement Learning, RNN, **Sampling Strategies**, SOM, Transformer, Vision, World Models |
 | `ml-libraries/` | PyTorch, HuggingFace, scikit-learn, XGBoost, pandas, polars, numpy, Ray, NeMo, DSPy, LiteLLM, vLLM, SGLang, Triton Inference Server, keras, seaborn, plotly |
-| `ml-training/` | feature-selection, training-workflow, evaluation, experiment-tracking, hf-jobs-workflow, **online-experimentation** (A/B, CUPED, bandits), **online-learning** (drift, incremental updates), data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced (GRPO/DPO), Ray distributed SFT, distributed GRPO |
-| `data-prep/` | EDA, feature engineering, **time-series-features** (lags, windows, point-process, purged CV), data validation |
+| `ml-training/` | feature-selection, training-workflow, **evaluation** (classical) + **llm-evaluation** (FM-specific), **prompt-engineering**, **inference-optimization**, **model-merging**, **gradient-free-optimization**, experiment-tracking, hf-jobs-workflow, **online-experimentation** (A/B, CUPED, bandits), **online-learning** (drift, incremental updates), data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced (GRPO/DPO), Ray distributed SFT, distributed GRPO |
+| `data-prep/` | EDA, feature engineering, **time-series-features** (lags, windows, point-process, purged CV), **dataset-curation** (FM data: SFT, preference, CoT, synthesis, dedup), data validation |
 | `gpu-lang/` | Triton, TileLang |
 | `acquire-ml-skill/` | Meta-skill — add a new skill or update one file |
 | `refine-ml-skill/` | Meta-skill — deep-research + propagate updates across multiple skills |

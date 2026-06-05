@@ -51,5 +51,10 @@ description: Index of deep learning architecture skills with PyTorch patterns an
 | Self-supervised pretraining without contrastive negatives | World Models (I-JEPA / V-JEPA) |
 | Agent that plans inside a learned simulator | World Models (Dreamer V3, MuZero, TD-MPC2, DIAMOND) |
 | Optimizing inference memory/speed | Attention (GQA, MLA, FlashAttention) |
-| Retrieval, similarity search, RAG | Embeddings (bi-encoder + vector DB) |
+| Retrieval, similarity search, RAG | Embeddings (bi-encoder + vector DB) → RAG (full pipeline + rerank + faithfulness eval) |
+| Build a knowledge-grounded LLM app (chunking, retrieve+rerank, eval) | RAG |
+| Build a tool-using / autonomous LLM | Agents |
+| Architect a production LLM app (gateway, guardrails, caching, observability) | AI App Architecture |
+| Tune LLM decoding (temperature, top-p, min-p, structured generation, self-consistency) | Sampling Strategies |
+| Learn to solve TSP/VRP/JSSP/MaxCut/SAT with neural heuristics | Neural Combinatorial Optimization |
 | Shrink model to fit on GPU | Quantization (AWQ/GPTQ/FP8) |
