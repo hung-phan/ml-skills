@@ -18,6 +18,8 @@ description: Complete ML training pipeline — feature selection, training loops
 | [ray-distributed-sft](ray-distributed-sft/) | Multi-GPU/node SFT with Ray Train + DeepSpeed ZeRO + FSDP |
 | [distributed-grpo](distributed-grpo/) | Distributed GRPO/PPO with OpenRLHF, veRL, TRL |
 | [experiment-tracking](experiment-tracking/) | MLflow, Weights & Biases — logging runs, model registry, sweeps |
+| [online-experimentation](online-experimentation/) | A/B testing pitfalls, Welch t-test, Benjamini-Hochberg, CUPED, sequential testing, multi-armed bandits, Thompson sampling — for shipping models to live traffic |
+| [online-learning](online-learning/) | Incremental learning (`partial_fit`, `river`), drift detection (PSI/KS/ADWIN/DDM), train/score separation, model-as-data control-stream, event-time windows |
 
 ## Quick Decision
 
@@ -32,3 +34,5 @@ description: Complete ML training pipeline — feature selection, training loops
 | Distribute SFT across GPUs | `ray-distributed-sft/` |
 | Distribute GRPO at scale | `distributed-grpo/` |
 | Log experiments, compare runs, model registry | `experiment-tracking/` |
+| Ship a model to live traffic (A/B, bandits, CUPED) | `online-experimentation/` |
+| Adapt model to streaming data, detect drift, hot-swap weights | `online-learning/` |

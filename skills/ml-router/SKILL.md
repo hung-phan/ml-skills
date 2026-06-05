@@ -36,7 +36,9 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | 10. Fine-tune an LLM | `ml-training/unsloth-sft/` → `ml-training/unsloth-advanced/` → `ml-training/distributed-grpo/` |
 | 11. Compress for inference | `ml-architectures/quantization/` |
 | 12. Serve | `ml-libraries/vllm/`, `ml-libraries/sglang/`, or `ml-libraries/triton-inference-server/` |
-| 13. Write custom GPU kernels | `gpu-lang/triton/` or `gpu-lang/tilelang/` |
+| 13. Ship to live traffic (A/B, bandits, canary) | `ml-training/online-experimentation/` |
+| 14. Adapt to streaming data, drift detection, hot-swap weights | `ml-training/online-learning/` |
+| 15. Write custom GPU kernels | `gpu-lang/triton/` or `gpu-lang/tilelang/` |
 
 ## By Problem Type
 
@@ -51,6 +53,7 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | Images — generation | `ml-architectures/diffusion/` (preferred) or `ml-architectures/gan/` |
 | Audio — recognition (Whisper, spectrograms) | `ml-architectures/cnn/` (spectrograms) or `ml-architectures/transformer/` (Whisper-style) |
 | Audio — generation (TTS, music, voice cloning) | `ml-architectures/audio/` |
+| Time series — tabular forecasting (XGBoost/LightGBM) | `data-prep/time-series-features/` (lags, windows, calendar, purged CV) |
 | Time series — short, sequential | `ml-architectures/rnn/` (LSTM/GRU) |
 | Time series — long, parallel training | `ml-architectures/transformer/` |
 | Time series — ultra-long (>8K), streaming | `ml-architectures/mamba/` |
@@ -111,6 +114,8 @@ Pick the right sub-skill from any of three angles: **by domain folder**, **by wo
 | Serve LLMs with structured / constrained output | `ml-libraries/sglang/` |
 | Serve any model in production (REST/gRPC) | `ml-libraries/triton-inference-server/` |
 | Reduce memory / latency | `ml-architectures/quantization/` + `ml-architectures/attention/` (GQA/MLA/FlashAttention) |
+| A/B test, canary, multi-armed bandit a model rollout | `ml-training/online-experimentation/` |
+| Hot-swap model weights, drift monitoring, online updates | `ml-training/online-learning/` |
 | Custom CUDA kernel in Python | `gpu-lang/triton/` |
 | Shared-memory / warp-level kernel | `gpu-lang/tilelang/` |
 

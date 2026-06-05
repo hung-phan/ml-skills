@@ -446,6 +446,51 @@ print(f"MCC:     {matthews_corrcoef(y_test, y_pred_final):.4f}")
 
 ---
 
+---
+
+## 9. "Too-Good-To-Be-True" — Leakage and Sanity-Check Playbook
+
+Before celebrating a strong CV score, run this checklist. Almost every ML team has shipped a model that "won" CV because of a leak the validation pipeline couldn't see. The pattern is universal: a feature secretly encodes the label.
+
+### Red flags that should trigger a leakage hunt
+
+| Red flag | Likely cause | Diagnostic |
+|----------|--------------|-----------|
+| CV score >> domain prior / human baseline | Target leak | Check feature importance — single feature dominates |
+| One feature has importance > all others combined | Direct or near-direct label encoding | Drop it, retrain — score collapses if true leak |
+| AUC stays high even with random labels shuffled | Bug in eval / shuffled labels not actually shuffled | Sanity test: shuffle y, AUC must drop to ~0.5 |
+| Train AUC ≈ Test AUC and both are very high | Group leak (same entity in train and test) | Use `GroupKFold` on the entity ID |
+| Performance degrades sharply from CV to live | Train uses a feature the serving pipeline can't compute at request-time | Compare train-time and serve-time feature schemas exactly |
+| Time-aware CV score >> shuffled-CV score on the SAME data | Future leak via post-event features | Audit each feature: is it knowable at the prediction timestamp? |
+
+### Leakage families to audit explicitly
+
+1. **Post-event features** — `payment_type` for fraud is a leak if it's only populated *after* the fraud is flagged. Test: redact the feature on a held-out window and re-score.
+2. **Group leak** — multiple rows per user/store/patient end up split across train and val. Use `GroupKFold` / `GroupShuffleSplit`.
+3. **Target encoding** — encoding categorical with the global mean leaks the labels of held-out rows. Use expanding-mean (past-only) target encoding.
+4. **Pre-split preprocessing** — fitting `StandardScaler` / imputation on the full dataset then splitting. Always fit transformers inside the fold (use `Pipeline`).
+5. **Duplicate rows** — same row in train and test (common in scraped data). Hash + dedupe before splitting.
+6. **Time leak** — random shuffle on a time-indexed dataset; future bleeds into past. See [`../../data-prep/time-series-features/`](../../data-prep/time-series-features/) for purged + embargoed CV.
+
+### Negative-control / shuffle test (cheap, definitive)
+
+```python
+from sklearn.utils import shuffle
+import numpy as np
+
+# Shuffle y. A model that trains on (X, shuffled_y) MUST score ~chance.
+# If it doesn't, your "score" is from a leak, not signal.
+y_shuffled = shuffle(y, random_state=0)
+score_shuffled = cross_val_score(model, X, y_shuffled, cv=5, scoring='roc_auc').mean()
+print(f"Shuffled-label AUC: {score_shuffled:.4f}")  # expect ~0.50
+```
+
+If the shuffled-label model scores meaningfully above 0.5, your CV pipeline is broken (most often: target encoding fitted before the split, or a feature derived from `y` itself).
+
+For the live-rollout side of this story (offline → A/B test, guardrails, CUPED), see [`../online-experimentation/`](../online-experimentation/). Offline beats live by default — confirm with a real experiment.
+
+---
+
 ## Common Gotchas
 
 1. **Data leakage with SMOTE**: Never apply SMOTE before cross-validation. Use `imblearn.pipeline.Pipeline` so resampling happens inside each fold.

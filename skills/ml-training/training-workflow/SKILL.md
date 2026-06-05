@@ -86,6 +86,17 @@ nested_scores = cross_val_score(gs, X, y, cv=outer_cv, scoring='f1_macro')
 print(f"Nested CV F1: {nested_scores.mean():.4f} ± {nested_scores.std():.4f}")
 ```
 
+### When to reach for nested CV (vs single-loop CV)
+
+| Goal | Use |
+|------|-----|
+| Pick the best hyperparameters of *one* model family | Single-loop `GridSearchCV` / `Optuna` — the inner CV's best score is fine |
+| Estimate generalization error of a *fully tuned* pipeline | Nested CV — outer fold gives an unbiased estimate, inner fold tunes |
+| Compare *different model families* (e.g. RF vs XGBoost vs MLP) head-to-head | Nested CV — without it, the family with the largest tuning surface wins by overfitting the inner CV |
+| Final model for production | Refit on all training data with the hyperparameters chosen by inner CV; use nested CV's outer score as the honest estimate |
+
+The reason: the inner CV's best score is *biased upward* (it's been optimized over). Reporting it as your generalization estimate is the same mistake as reporting the training score. Nested CV's outer loop is the only honest answer when hyperparameters were tuned. For the live-rollout analog (offline → A/B), see [`../online-experimentation/`](../online-experimentation/).
+
 ---
 
 ## 3. Hyperparameter Tuning

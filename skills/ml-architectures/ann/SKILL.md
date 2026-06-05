@@ -369,7 +369,49 @@ Output:      [B, out_features]
 
 ---
 
+---
+
+## Network Introspection — "Back-Query" the Trained MLP
+
+A simple, framework-free interpretability trick (Rashid 2016): once trained, run the network *backwards* with a one-hot label at the output, propagating through the inverse activation, to see the "ideal input" the model associates with each class. For a sigmoid net, the inverse is `logit(y) = log(y / (1 - y))`. Useful as a sanity check on classification heads — the back-queried prototype should look like a plausible average instance of the class.
+
+```python
+import numpy as np
+
+def back_query_sigmoid_mlp(weights, biases, target_class, n_classes):
+    """
+    weights, biases: lists of (W_l, b_l) from a trained sigmoid MLP, output-first.
+    Returns the input that, propagated forward, yields a one-hot at target_class.
+    """
+    # One-hot output, clipped to avoid logit(0) / logit(1) blowing up
+    o = np.full(n_classes, 0.01)
+    o[target_class] = 0.99
+
+    # Walk layers backward
+    for W, b in zip(reversed(weights), reversed(biases)):
+        z = np.log(o / (1 - o))         # inverse sigmoid
+        x = np.linalg.pinv(W) @ (z - b) # invert the linear layer (least-squares)
+        # Squash to valid sigmoid range for the next iteration
+        o = 1 / (1 + np.exp(-x))
+        o = np.clip(o, 0.01, 0.99)
+    return o
+```
+
+The trick only works cleanly for invertible activations (sigmoid, tanh). For ReLU/GELU, prefer **activation-maximization** via gradient ascent on the input. Modern equivalents include saliency maps, Grad-CAM (CNNs), and SHAP — all stronger but heavier-weight. Back-query is a 20-line baseline that requires no extra tooling.
+
+### Sigmoid Saturation and Target Scaling (Legacy Sigmoid/Tanh Nets)
+
+If you must use sigmoid or tanh (e.g. small classifiers, embedded models, replicating older work), two practical disciplines that do **not** apply to ReLU/GELU:
+
+1. **Squash inputs and targets into 0.01–0.99**, never to exact 0 / 1. Targets at the saturation extremes drive weights into the flat tail of the activation, where gradients vanish and learning stalls.
+2. **Symmetry-break with `N(0, 1/√fan_in)` (or He / Xavier — see table above)**. Identical or zero initial weights cause errors to split equally forever; the network never differentiates its hidden units.
+
+These framings are why ReLU + He init swept the field — they sidestep both failures by construction.
+
+---
+
 ## References
 
 - [PyTorch nn Module](https://pytorch.org/docs/stable/nn.html) — Complete neural network building blocks
 - [Batch Normalization (Ioffe & Szegedy, 2015)](https://arxiv.org/abs/1502.03167) — Accelerating deep network training
+- Rashid, Tariq — *Make Your Own Neural Network* (2016) — origin of the back-query interpretability trick: https://makeyourownneuralnetwork.blogspot.com/
