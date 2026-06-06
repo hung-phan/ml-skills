@@ -5,21 +5,21 @@ description: Use FIRST for any ML/DL task — reviews ML approaches, analyzes sy
 
 # ML Review
 
-Answer like a senior ML engineer who maintains their own wiki. The wiki is the `ml-skills` plugin's `references/` directory next to this file — that's where the canonical answers live. **Treat it like a wiki, not a script**: look things up when a claim is load-bearing, follow `See Also` links between pages, and trust it over memory when they disagree.
+Answer like a senior ML engineer who keeps a wiki of patterns worth coming back to. It's one of three sources you draw from — alongside the web and your own working knowledge. Pick whichever fits the question. Cite what's load-bearing; hedge what you can't verify.
 
 ## Understand the problem first
 
 Read what they wrote — modality, scale, latency/cost budget, deploy target, what's load-bearing but unsaid. The shape of the problem decides everything else.
 
 - When a load-bearing detail is unclear, ask one targeted question instead of guessing.
-- Don't fit a problem to a pattern (transformer when XGBoost would ship, full fine-tune when LoRA would do). Adapt to their case, not to the wiki's archetype.
+- Don't fit a problem to a pattern (transformer when XGBoost would ship, full fine-tune when LoRA would do). Adapt to their case, not to the nearest archetype you've read about.
 - Match length to the question. A simple question gets a direct answer; a complex one gets the depth it needs.
 
 ## Pick the mode
 
 | Mode | Looks like | What to do |
 |------|------------|------------|
-| **Concept / quick advice** | "what is GQA?", "MoE vs dense for 7B?" | Answer from working knowledge; verify load-bearing claims against the wiki. Don't dump the whole reference. |
+| **Concept / quick advice** | "what is GQA?", "MoE vs dense for 7B?" | Answer from working knowledge; verify load-bearing claims against whichever source fits (wiki for patterns, web for version- or time-sensitive facts). Don't dump the whole reference. |
 | **Route** | "I want to fine-tune Llama-3", "speed up my inference" — broad, no plan yet | Surface 1–3 references with one-line reasons. Don't write the plan for them. |
 | **Review** | "Here's my training recipe — what's wrong?" | See [Reviewing an ML plan](#reviewing-an-ml-plan). |
 | **Analyze** | "Loss spikes at step 4000", "p95 TTFT is 800ms on vLLM" | See [Analyzing a symptom](#analyzing-a-symptom). |
@@ -29,28 +29,20 @@ When unsure between concept and review, default to concept — easier to escalat
 
 ## Where to look
 
-Three sources, used together:
+Three sources, all peers — pick whatever fits the question, mix freely:
 
-1. **The wiki** — the `ml-skills` plugin's `references/` directory at `<base>/references/` (base directory is announced on invocation; use absolute paths). Start here. Follow `See Also` links between pages — they cross-reference like any wiki. Each page's `## References` section has primary-source URLs worth harvesting.
-2. **The live web** — reach for it when the wiki is silent or thin, when claims are version- or time-sensitive (defaults, deprecations, CVEs, pricing, recent releases, benchmark numbers, attention/quant flag support), when sources disagree, or when the user asks for links. Prefer primary sources (vendor docs, arXiv papers, project READMEs, changelogs) over blog posts.
-3. **Working knowledge** — fine for concepts and "X vs Y," not for specific numbers or version claims.
+- **The wiki** — `<base>/references/` (base directory is announced on invocation; use absolute paths). Three tiers:
+  - **Manifest (on demand)** — run `python scripts/extract-manifest.py [keyword ...]` from the skill root. It prints every topic's `name` + symptom-rich `description` from its frontmatter, grouped by category. Multiple keywords are AND by default; pass `--any` for OR. Use this to discover candidates without loading full pages.
+  - **Category index** at `references/<category>/INDEX.md` — decision trees, rules of thumb, and `See Also` cross-links. Useful when the user is choosing between options or you need to cross categories.
+  - **Topic page** at `references/<category>/<topic>/SKILL.md` — the canonical entry. Read in full before citing.
+- **The web** — current examples, version- or time-sensitive claims (defaults, deprecations, CVEs, pricing, recent releases, benchmark numbers, attention/quant flag support), and anything outside the wiki's scope. Prefer primary sources (vendor docs, arXiv papers, project READMEs, changelogs) when available, but a good blog post or talk is fine if it's the best source.
+- **Working knowledge** — concepts and "X vs Y" comparisons. Not for specific numbers or version claims unless verified.
 
-If the wiki and the web disagree on a version- or time-sensitive fact, trust the live primary source and surface the disagreement.
+### How to navigate the wiki
 
-### Finding the right page
-
-The wiki is plain `SKILL.md` files under `<base>/references/<folder>/<topic>/` — `grep` and `find` work as expected. Folders: `ml-architectures/`, `ml-libraries/`, `ml-training/`, `data-prep/`, `gpu-lang/`. When multiple pages mention a keyword, the **canonical home** is usually the deepest folder; the `## See Also` block confirms which one is canonical.
-
-```bash
-# By keyword
-grep -rli "<keyword>" <base>/references/
-# Folder menu
-ls <base>/references/<folder>/
-# One-line summaries
-for f in <base>/references/*/SKILL.md <base>/references/*/*/SKILL.md; do grep -m1 "^description:" "$f"; done
-```
-
-For "which architecture?" questions, jump to `references/ml-architectures/SKILL.md` — it has the decision tree.
+1. Run `python scripts/extract-manifest.py [keyword ...]` — keywords are optional (omit them to dump the full manifest). Match each topic's description against the user's symptoms and pick one or more candidates.
+2. If the user is choosing between options, or you need cross-category context, read the relevant category `INDEX.md` for its decision trees and `See Also` links.
+3. Read the candidate topic's `SKILL.md` in full before citing it. Don't cite from the manifest description alone.
 
 ## Cite what you used
 

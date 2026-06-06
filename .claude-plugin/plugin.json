@@ -1,7 +1,7 @@
 {
   "name": "ml-skills",
   "description": "ML review skill — routes broad ML/DL questions, reviews ML approaches, analyzes pipelines, and suggests solutions. Backed by an indexed reference library covering architectures, libraries, training, data-prep, and GPU kernels (PyTorch, transformers, LLM fine-tuning, Triton kernels, RAG, agents, and more).",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "hung-phan"
   },
