@@ -66,16 +66,16 @@ Before researching, find every skill that *currently* references the topic. Don'
 
 ```bash
 # From repo root
-grep -ril "<topic-keyword>" skills/
-grep -rl "<api-or-class-name>" skills/
+grep -ril "<topic-keyword>" skills/ml-review/references/
+grep -rl "<api-or-class-name>" skills/ml-review/references/
 ```
 
 List the matches in a short table:
 
 | Skill path | Current claim about the topic |
 |------------|-------------------------------|
-| `skills/ml-architectures/attention/SKILL.md` | … |
-| `skills/ml-libraries/vllm/SKILL.md` | … |
+| `skills/ml-review/references/ml-architectures/attention/SKILL.md` | … |
+| `skills/ml-review/references/ml-libraries/vllm/SKILL.md` | … |
 
 Also list **likely-but-missing** skills — folders that *should* mention the topic but don't. Those become add-or-extend targets.
 
@@ -129,13 +129,13 @@ Run before reporting done:
 for url in <list>; do curl -sI "$url" | head -1; done
 
 # No stale references remain
-grep -rn "<deprecated-name>" skills/
+grep -rn "<deprecated-name>" skills/ml-review/references/
 
 # Cross-references resolve
-grep -rn "](\.\./" skills/ | <spot-check the relative paths>
+grep -rn "](\.\./" skills/ml-review/references/ | <spot-check the relative paths>
 ```
 
-If the router (`ml-router/SKILL.md`) needs a new row because a sub-skill was added or a problem-type mapping changed, edit it too.
+If `ml-review` (`skills/ml-review/SKILL.md`) needs a new row because a reference was added or a problem-type mapping changed, edit it too.
 
 ### Phase 8 — Report
 
@@ -159,10 +159,10 @@ Summarize for the user, in this order:
 |-----------|-------------|
 | The research surfaced a topic deserving a new sub-skill | [`acquire-ml-skill.md`](acquire-ml-skill.md) (create), then come back here to wire references |
 | Just one file needs a small fix | [`acquire-ml-skill.md`](acquire-ml-skill.md) (update workflow) |
-| The router itself is structurally wrong | edit `skills/ml-router/SKILL.md` directly |
+| The skill itself is structurally wrong | edit `skills/ml-review/SKILL.md` directly |
 
 ## References
 
 - [`acquire-ml-skill.md`](acquire-ml-skill.md) — quality standards every edited skill must satisfy.
-- `skills/ml-router/SKILL.md` — the routing index; update if a sub-skill is added or its scope shifts.
+- `skills/ml-review/SKILL.md` — the routing/review/analyze index; update if a reference is added or its scope shifts.
 - `deep-research` skill — invoke for primary-source gathering in Phase 4.

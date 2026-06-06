@@ -50,25 +50,37 @@ If any of these answers come out as "I don't know", stop and research — don't 
 
 ## Repository Structure
 
-Skills live under the `skills/` directory. Each skill is a folder containing a single `SKILL.md` file.
+The plugin ships **one** skill — `ml-review` — at `skills/ml-review/SKILL.md`. Every other ML topic lives under `skills/ml-review/references/<folder>/<topic>/SKILL.md` and is read on demand by the skill (Claude's `references/` convention: not auto-loaded into context).
 
 ```
 skills/
-├── ml-router/                   (top-level router — entry point for any ML/DL task)
-├── ml-architectures/            (ANN, CNN, RNN, Transformer, Attention, MoE, Mamba,
-│                                 GAN, Diffusion, GNN, LLM, Vision, RL, Autoencoder,
-│                                 Boltzmann, Quantization, Embeddings, Regression/Classification)
-├── ml-libraries/                (PyTorch, HuggingFace, scikit-learn, XGBoost, pandas,
-│                                 polars, numpy, Ray, DSPy, LiteLLM, vLLM, SGLang,
-│                                 Triton Inference Server, keras, seaborn, plotly)
-├── ml-training/                 (feature-selection, training-workflow, evaluation,
-│                                 data-parallel, unsloth-sft, unsloth-advanced,
-│                                 ray-distributed-sft, distributed-grpo, experiment-tracking)
-├── data-prep/                   (eda, feature-engineering, data-validation)
-└── gpu-lang/                    (triton, tilelang)
+└── ml-review/
+    ├── SKILL.md                     (the only auto-loaded skill — routing + review/analyze/suggest)
+    └── references/
+        ├── ml-architectures/        (ANN, CNN, RNN, Transformer, Attention, MoE, Mamba,
+        │                             GAN, Diffusion, GNN, LLM, Vision, RL, Autoencoder,
+        │                             Boltzmann, Quantization, Embeddings, RAG, Agents,
+        │                             AI App Architecture, Sampling Strategies, Audio,
+        │                             World Models, Neural Combinatorial Optimization,
+        │                             SOM, Regression/Classification)
+        ├── ml-libraries/            (PyTorch, HuggingFace, scikit-learn, XGBoost, pandas,
+        │                             polars, numpy, Ray, NeMo, DSPy, LiteLLM, vLLM, SGLang,
+        │                             Triton Inference Server, keras, seaborn, plotly)
+        ├── ml-training/             (feature-selection, training-workflow, evaluation,
+        │                             llm-evaluation, prompt-engineering, inference-optimization,
+        │                             model-merging, gradient-free-optimization,
+        │                             experiment-tracking, hf-jobs-workflow,
+        │                             online-experimentation, online-learning, data-parallel,
+        │                             unsloth-sft, unsloth-advanced, ray-distributed-sft,
+        │                             distributed-grpo)
+        ├── data-prep/               (eda, feature-engineering, time-series-features,
+        │                             dataset-curation, data-validation)
+        └── gpu-lang/                (triton, tilelang)
 ```
 
 The two meta-guidelines (`acquire-ml-skill.md`, `refine-ml-skill.md`) live in `docs/` — not under `skills/` — because they're for repo maintainers and would otherwise burn ~360 tokens of context every session.
+
+**Terminology note**: throughout this guide, "skill" refers to a single SKILL.md file under `references/<folder>/<topic>/`. There is only one *plugin-level* skill (`ml-review`); every other SKILL.md is a *reference* read on demand by the plugin-level skill.
 
 ## Quality Standards
 
@@ -158,7 +170,7 @@ Each folder has its own `SKILL.md` that lists children in a table. Keep index fi
 
 1. **Decide placement**: Which folder does it belong in? If none fit, propose a new folder.
 2. **Research**: Gather from official docs + GitHub repo + seminal paper. Use web search or spawn agents for this.
-3. **Write `skills/<folder>/<topic>/SKILL.md`** satisfying all quality standards above:
+3. **Write `skills/ml-review/references/<folder>/<topic>/SKILL.md`** satisfying all quality standards above:
    - [ ] YAML frontmatter with `name` and `description` (include trigger phrases in description)
    - [ ] `## Why This Exists` (Problem / Key insight / Reach for this when)
    - [ ] Code examples (PyTorch + sklearn/framework-agnostic where applicable)

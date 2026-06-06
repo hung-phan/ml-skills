@@ -1,7 +1,7 @@
 {
   "name": "ml-skills",
-  "description": "Comprehensive ML skills library — architectures, libraries, training, inference, GPU kernels, and data prep. Covers PyTorch, transformers, LLM fine-tuning, Triton kernels, and more.",
-  "version": "0.1.11",
+  "description": "ML review skill — routes broad ML/DL questions, reviews ML approaches, analyzes pipelines, and suggests solutions. Backed by an indexed reference library covering architectures, libraries, training, data-prep, and GPU kernels (PyTorch, transformers, LLM fine-tuning, Triton kernels, RAG, agents, and more).",
+  "version": "0.2.0",
   "author": {
     "name": "hung-phan"
   },
@@ -10,6 +10,8 @@
   "keywords": [
     "skills",
     "machine-learning",
+    "ml-review",
+    "ml-analysis",
     "pytorch",
     "llm",
     "fine-tuning",
@@ -30,11 +32,6 @@
     "sglang"
   ],
   "skills": [
-    "./skills/ml-router",
-    "./skills/ml-architectures",
-    "./skills/ml-libraries",
-    "./skills/ml-training",
-    "./skills/data-prep",
-    "./skills/gpu-lang"
+    "./skills/ml-review"
   ]
 }

@@ -1,6 +1,6 @@
 # ML Skills
 
-A Claude Code plugin with a comprehensive ML skills library — reference guides with working code, decision tables, and "why this exists" context for every major ML topic.
+A Claude Code plugin that ships **one** skill — `ml-review` — and a curated reference library of ~80 ML topics. The skill routes broad ML/DL questions, reviews ML approaches, analyzes pipelines, and suggests solutions; the references hold the deep treatment of each topic and are read on demand by the skill.
 
 **Author**: [hung-phan](https://github.com/hung-phan)
 
@@ -16,120 +16,119 @@ Register as a plugin marketplace, then install:
 ### Local install (for development)
 
 ```bash
-claude plugin validate .claude-plugin/plugin.json
-claude plugin add /path/to/ml-skills
+claude plugin marketplace add ./
+claude plugin install ml-skills@ml-skills
 ```
 
 ## How to Use
 
-Skills are invoked as slash commands. **The fastest way: ask `/ml-router` first whenever you're unsure.**
-
-### Start here: the router
+There is one skill: `/ml-review`. Reach for it whenever you have an ML/DL question, a plan to critique, or a system that's misbehaving.
 
 ```
-/ml-router I need to fine-tune Llama-3 on a single GPU with limited VRAM
-/ml-router my XGBoost model passes CV but fails in production — what do I check?
-/ml-router I have a Kafka stream and want to build features for a fraud model
+/ml-review I need to fine-tune Llama-3 on a single GPU with limited VRAM
+/ml-review my XGBoost model passes CV but fails in production — what do I check?
+/ml-review review my plan: train a transformer on 50K rows of tabular data
+/ml-review p95 TTFT is 800ms on vLLM with Llama-3-8B — what can I tune?
+/ml-review which architecture should I use for ultra-long-sequence forecasting?
 ```
 
-`/ml-router` reads your question and points you to the right sub-skill. Reach for it whenever the right skill isn't obvious.
+`/ml-review` reads your question and does one of three things:
 
-### Jump straight to a skill when you know what you want
+1. **Routes** — points you to the right reference doc (e.g. `references/ml-architectures/attention/`).
+2. **Reviews** — critiques an ML plan against the reference library, surfacing the top 2-3 risks.
+3. **Analyzes / suggests** — diagnoses a system or proposes an end-to-end approach with citations.
 
-| You want to... | Invoke |
-|----------------|--------|
-| Pick a model architecture (CNN vs Transformer vs Mamba vs Diffusion...) | `/ml-architectures` |
-| Use a specific library (PyTorch, HuggingFace, vLLM, Ray, polars...) | `/ml-libraries` |
-| Set up training, eval, fine-tuning, distributed training | `/ml-training` |
-| Explore, validate, or feature-engineer data | `/data-prep` |
-| Write custom GPU kernels (Triton, TileLang) | `/gpu-lang` |
+It does this by reading reference files **on demand** — the references are not preloaded into context.
 
-Each top-level skill is itself a router — invoking `/ml-architectures` returns a decision table that points to the specific sub-skill (`attention/`, `transformer/`, `diffusion/`, ...). Sub-skills can also be invoked by their nested name from inside the parent skill.
+## Repository Layout
 
-### Three usage patterns
-
-1. **Broad question, unsure where to start** → `/ml-router <your question>`. The router routes you.
-2. **You know the area** → `/ml-architectures`, `/ml-libraries`, `/ml-training`, `/data-prep`, or `/gpu-lang`. The skill's index points you to the right sub-skill.
-3. **You know the exact topic** → ask Claude directly ("show me the attention skill", "how do I do CUPED variance reduction?"). The relevant skill activates automatically because skill descriptions match the trigger phrases.
-
-### Workflow examples
-
-**End-to-end training a tabular model:**
 ```
-/data-prep         → EDA, feature engineering, validation
-/ml-training       → split strategy, CV, Optuna, tracking
-                     (then: evaluation, online-experimentation when shipping)
+.claude-plugin/plugin.json           # plugin manifest (declares the single ml-review skill)
+skills/
+  ml-review/
+    SKILL.md                         # the only auto-loaded skill — routing tables + review/analyze/suggest procedures
+    references/                      # ~80 reference docs, read on demand by ml-review
+      ml-architectures/              # Agents, Attention, Audio, CNN, Diffusion, LLM, Mamba, MoE, RAG, RL, Vision, World Models, …
+      ml-libraries/                  # PyTorch, HuggingFace, sklearn, XGBoost, pandas, polars, numpy, Ray, vLLM, SGLang, …
+      ml-training/                   # training-workflow, evaluation, llm-evaluation, prompt-engineering, inference-optimization, model-merging, online-experimentation, online-learning, data-parallel, Unsloth, GRPO, …
+      data-prep/                     # eda, feature-engineering, time-series-features, dataset-curation, data-validation
+      gpu-lang/                      # triton, tilelang
+docs/
+  acquire-ml-skill.md                # maintainer guide: add or update a single reference
+  refine-ml-skill.md                 # maintainer guide: deep-research + propagate updates across multiple references
+README.md
 ```
 
-**Fine-tuning an LLM:**
-```
-/data-prep          → dataset-curation (curate SFT / preference / CoT data)
-/ml-libraries       → HuggingFace, PEFT
-/ml-training        → unsloth-sft → unsloth-advanced (DPO/GRPO) → distributed-grpo
-/ml-training        → llm-evaluation (build eval scorecard, judge, hallucination check)
-/ml-training        → model-merging (combine specialist checkpoints — TIES/DARE/SLERP)
-/ml-architectures   → quantization (for inference)
-/ml-training        → inference-optimization (TTFT/TPOT, spec-decoding, prefix cache)
-/ml-libraries       → vllm or sglang (for serving)
-```
+> The `references/` folder follows Claude's skill convention — files there are not auto-loaded into context but the skill reads them with the Read tool when needed. This keeps the per-session token footprint small.
 
-**Building an LLM application (RAG / agent / production):**
-```
-/ml-training        → prompt-engineering (chat templates, CoT, injection defenses)
-/ml-architectures   → rag (chunking, BM25/dense/hybrid, rerankers, faithfulness eval)
-/ml-architectures   → agents (tool use, ReAct, function calling, eval benchmarks)
-/ml-architectures   → sampling-strategies (temperature, top-p, structured generation)
-/ml-architectures   → ai-app-architecture (gateway, guardrails, caching, observability)
-/ml-training        → llm-evaluation (judges, faithfulness, regression-test prompts)
-```
+### What lives in references/
 
-**Building a forecasting pipeline:**
-```
-/ml-router "tabular forecasting with covariates"
-  → time-series-features (or Chronos/AutoGluon-TS for zero-shot)
-  → training-workflow (purged + embargoed CV)
-  → online-learning (drift detection in production)
-```
-
-**Shipping a model to live traffic:**
-```
-/ml-training/online-experimentation   → A/B, CUPED, sequential testing, bandits
-/ml-training/online-learning          → drift detection, hot-swap, train/score separation
-```
-
-## What's Included
-
-| Folder | Skills |
+| Folder | Topics |
 |--------|--------|
-| `ml-router/` | Top-level routing index — start here for any ML/DL task |
 | `ml-architectures/` | Agents, AI App Architecture, ANN, Attention, Audio, Autoencoder, Boltzmann, CNN, Diffusion, Embeddings, GAN, GNN, LLM, Mamba, MoE, **Neural Combinatorial Optimization**, Quantization, **RAG**, Regression/Classification, Reinforcement Learning, RNN, **Sampling Strategies**, SOM, Transformer, Vision, World Models |
 | `ml-libraries/` | PyTorch, HuggingFace, scikit-learn, XGBoost, pandas, polars, numpy, Ray, NeMo, DSPy, LiteLLM, vLLM, SGLang, Triton Inference Server, keras, seaborn, plotly |
 | `ml-training/` | feature-selection, training-workflow, **evaluation** (classical) + **llm-evaluation** (FM-specific), **prompt-engineering**, **inference-optimization**, **model-merging**, **gradient-free-optimization**, experiment-tracking, hf-jobs-workflow, **online-experimentation** (A/B, CUPED, bandits), **online-learning** (drift, incremental updates), data-parallel (DDP/FSDP), Unsloth SFT, Unsloth advanced (GRPO/DPO), Ray distributed SFT, distributed GRPO |
 | `data-prep/` | EDA, feature engineering, **time-series-features** (lags, windows, point-process, purged CV), **dataset-curation** (FM data: SFT, preference, CoT, synthesis, dedup), data validation |
 | `gpu-lang/` | Triton, TileLang |
 
-> **Maintainer guidelines** (not runtime skills) live in `docs/`:
-> - [`docs/acquire-ml-skill.md`](docs/acquire-ml-skill.md) — add a new skill or update one file
-> - [`docs/refine-ml-skill.md`](docs/refine-ml-skill.md) — deep-research + propagate updates across multiple skills
+## How the Skill Picks References
 
-## Skill Format
+`ml-review` uses three lookup paths, in this order of preference:
 
-Every skill follows a consistent format:
+1. **Workflow-stage table** — when you know what step you're on (e.g. "I'm picking metrics" → `references/ml-training/evaluation/`).
+2. **Problem-type tables** — when you know what kind of problem you have (e.g. "tabular forecasting" → `references/data-prep/time-series-features/`).
+3. **`grep`** — when you know a keyword (paper name, API, library) but not which reference owns it.
+
+See [`skills/ml-review/SKILL.md`](skills/ml-review/SKILL.md) for the full tables and the review/analyze/suggest procedures.
+
+## Reference Format
+
+Every reference doc under `references/` follows a consistent format:
 - **Why This Exists** — the problem it solves and when to reach for it
 - **Code examples** — PyTorch and/or sklearn, realistic and runnable
 - **Decision tables** — when to use this vs alternatives
 - **References** — verified links to docs, papers, and repos
-- **See Also** — cross-references to adjacent skills so you can navigate the library by topic
+- **See Also** — cross-links so the skill can navigate by topic
+
+## Workflow Examples
+
+**Building a forecasting pipeline:**
+```
+/ml-review tabular forecasting with covariates
+  → references/data-prep/time-series-features/  (lags, windows, calendar, purged CV)
+  → references/ml-training/training-workflow/   (purged + embargoed CV, nested CV)
+  → references/ml-training/online-learning/     (drift detection in production)
+```
+
+**Fine-tuning an LLM:**
+```
+/ml-review I want to fine-tune Llama-3 for customer support
+  → references/data-prep/dataset-curation/      (SFT / preference data)
+  → references/ml-training/unsloth-sft/         (single-GPU LoRA)
+  → references/ml-training/unsloth-advanced/    (DPO/GRPO)
+  → references/ml-training/llm-evaluation/      (judges, faithfulness)
+  → references/ml-architectures/quantization/   (compress for inference)
+  → references/ml-libraries/vllm/               (serve)
+```
+
+**Building an LLM application (RAG / agent):**
+```
+/ml-review architect a production RAG system
+  → references/ml-architectures/rag/            (chunking, BM25/dense/hybrid, rerankers)
+  → references/ml-architectures/embeddings/     (model choice, vector search)
+  → references/ml-architectures/ai-app-architecture/  (gateway, guardrails, observability)
+  → references/ml-training/llm-evaluation/      (faithfulness, regression eval)
+```
 
 ## Contributing
 
-Maintainer guidelines live in `docs/` (not under `skills/`, so they don't burn context tokens for end users). Read the relevant one before editing:
+Maintainer guidelines live in `docs/` (kept out of `references/` so they don't burn context tokens for end users). Read the relevant one before editing:
 
 | Task | Read |
 |------|------|
-| Add one new skill or lightly edit one file | [`docs/acquire-ml-skill.md`](docs/acquire-ml-skill.md) |
-| Refresh a topic that spans multiple skills (e.g. a new attention variant touches `attention/`, `llm/`, `vllm/`) | [`docs/refine-ml-skill.md`](docs/refine-ml-skill.md) |
+| Add one new reference or lightly edit one file | [`docs/acquire-ml-skill.md`](docs/acquire-ml-skill.md) |
+| Refresh a topic that spans multiple references (e.g. a new attention variant touches `attention/`, `llm/`, `vllm/`) | [`docs/refine-ml-skill.md`](docs/refine-ml-skill.md) |
 | Audit coverage of an area after a major release | [`docs/refine-ml-skill.md`](docs/refine-ml-skill.md) |
-| Restructure the router itself | edit `skills/ml-router/SKILL.md` directly |
+| Restructure the SKILL.md itself | edit `skills/ml-review/SKILL.md` directly |
 
-These docs encode the quality standards, folder conventions, intake questions, and formatting rules. Hand them to Claude as the spec for the change you want — e.g. "follow `docs/acquire-ml-skill.md` to add a skill on rotary positional embeddings (RoPE)".
+These docs encode the quality standards, folder conventions, intake questions, and formatting rules. Hand them to Claude as the spec for the change you want — e.g. "follow `docs/acquire-ml-skill.md` to add a reference on rotary positional embeddings (RoPE)".

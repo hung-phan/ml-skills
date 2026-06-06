@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Comprehensive ML skills library — architectures, libraries, training, inference, GPU kernels, and data prep.",
-    "version": "0.1.11"
+    "version": "0.2.0"
   },
   "plugins": [
     {
