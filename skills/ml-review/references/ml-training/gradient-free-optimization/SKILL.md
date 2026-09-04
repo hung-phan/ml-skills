@@ -377,7 +377,7 @@ print("best f:", es.result.fbest)
 print("evals:", es.result.evaluations)
 ```
 
-Tips: set `sigma0` to ~1/4 of the search range; if the optimizer stalls, increase `popsize`; use `BoundaryHandler` for hard constraints; for noisy objectives set `noise_handling=True`.
+Tips: set `sigma0` to ~1/4 of the search range; if the optimizer stalls, increase `popsize`; use `BoundaryHandler` for hard constraints; for noisy objectives use the functional interface `cma.fmin2(f, x0, sigma0, noise_handler=True)` (or pass a `cma.NoiseHandler` instance) — this is not an option on `CMAEvolutionStrategy`.
 
 ---
 
@@ -526,7 +526,7 @@ Pair with **early stopping** (`HyperbandPruner`, `MedianPruner`) — most trials
 
 Discrete optimization over strings. Methods:
 - **APE** (Automatic Prompt Engineer) — LLM proposes prompts, scores via task accuracy, picks the best.
-- **DSPy** — bootstrap-fewshot + MIPROv2 do search over instructions and demonstrations using TPE-style proposal-and-score.
+- **DSPy** — bootstrap-fewshot + MIPROv2 do search over instructions and demonstrations using TPE-style proposal-and-score. **GEPA** (Genetic-Pareto reflective prompt evolution, DSPy's featured optimizer as of 2025) is a direct evolutionary fit for this page: an LLM acts as the mutation operator over prompts and candidates are kept on a Pareto front. **SIMBA** is another current DSPy optimizer.
 - **PromptBreeder** — evolutionary prompt mutation and crossover with LLM as the mutation operator.
 
 If your search space is "set of discrete tokens" with no natural distance metric, GA with LLM-based mutation operators is the practical default.
@@ -582,7 +582,7 @@ For pure combinatorial problems, *check first whether an exact solver (MILP, CP-
 7. **TSP / VRP / job-shop?** → Try Google OR-Tools first (it'll surprise you); fall back to ACO + 2-opt or Tabu.
 8. **Multi-objective?** → NSGA-II via pymoo, or Optuna multi-objective.
 9. **Architecture search?** → DARTS / ProxylessNAS if differentiable; AmoebaNet-style evolutionary NAS otherwise; or NAS-Bench for research.
-10. **Prompt optimization?** → DSPy MIPROv2 or APE-style search; not the original 1990s GA.
+10. **Prompt optimization?** → DSPy GEPA/MIPROv2 or APE-style search; not the original 1990s GA.
 
 ---
 
@@ -602,7 +602,7 @@ For pure combinatorial problems, *check first whether an exact solver (MILP, CP-
 
 - Optuna documentation — https://optuna.readthedocs.io/en/stable/
 - pycma (CMA-ES reference implementation) — https://github.com/CMA-ES/pycma
-- PySwarms (PSO library) — https://github.com/ljvmiranda921/pyswarms
+- PySwarms (PSO library) — https://github.com/ljvmiranda921/pyswarms (no longer actively maintained; author recommends scikit-opt — for a maintained multi-method option covering PSO/CMA-ES/DE under one API see Nevergrad: https://github.com/facebookresearch/nevergrad)
 - DEAP (evolutionary algorithms) — https://github.com/DEAP/deap
 - pymoo (multi-objective and many-objective optimization) — https://github.com/anyoptimization/pymoo
 - Ray Tune — https://docs.ray.io/en/latest/tune/index.html
@@ -610,4 +610,5 @@ For pure combinatorial problems, *check first whether an exact solver (MILP, CP-
 - Salimans et al. (2017), *Evolution Strategies as a Scalable Alternative to Reinforcement Learning* — https://arxiv.org/abs/1703.03864
 - Hansen (2016), *The CMA Evolution Strategy: A Tutorial* — https://arxiv.org/abs/1604.00772
 - Khamis (2024), *Optimization Algorithms* (Manning) — https://www.manning.com/books/optimization-algorithms
-- Khattab et al. (2023), *DSPy: Compiling Declarative Language Model Calls* — https://arxiv.org/abs/2310.02905
+- Khattab et al. (2023), *DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines* — https://arxiv.org/abs/2310.03714
+- DSPy (prompt optimizers: GEPA, MIPROv2, SIMBA) — https://dspy.ai/

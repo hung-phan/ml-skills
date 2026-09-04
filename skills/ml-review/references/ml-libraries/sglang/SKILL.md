@@ -382,23 +382,32 @@ sglang serve --model-path deepseek-ai/DeepSeek-V3 --tp 8 --ep 8
 ```bash
 # Prefill node (high compute)
 sglang serve --model-path meta-llama/Meta-Llama-3.1-70B-Instruct \
-  --tp 4 --pd-mode prefill --pd-addr prefill-node:5000
+  --tp 4 --disaggregation-mode prefill \
+  --disaggregation-transfer-backend mooncake \
+  --host 0.0.0.0 --port 30000
 
 # Decode node (high memory bandwidth)
 sglang serve --model-path meta-llama/Meta-Llama-3.1-70B-Instruct \
-  --tp 4 --pd-mode decode --pd-addr decode-node:5000
+  --tp 4 --disaggregation-mode decode \
+  --disaggregation-transfer-backend mooncake \
+  --host 0.0.0.0 --port 30001
+
+# Router routes requests between the prefill and decode servers
+python -m sglang_router.launch_router --pd-disaggregation \
+  --prefill http://prefill-node:30000 --decode http://decode-node:30001 \
+  --host 0.0.0.0 --port 8000
 ```
 
 ### RL / Post-Training Integration
 
-SGLang is used as rollout backend by AReaL, Miles, slime, Tunix, verl. Native support via `--sglang-for-rl` mode with vLLM-compatible weight update APIs.
+SGLang is used as rollout backend by AReaL, Miles, slime, Tunix, verl. These frameworks embed SGLang (via `sgl.Engine` / the offline engine) and drive it through SGLang's weight-update APIs — there is no dedicated server flag.
 
 ## 6. Decision Table
 
 | Factor | SGLang | vLLM | Triton Inference Server | TGI |
 |--------|--------|------|------------------------|-----|
 | **Best for** | Multi-turn, structured output, agentic, RL | General serving, broad ecosystem | Multi-framework, enterprise | Simple HF deployment |
-| **Prefix caching** | RadixAttention (automatic, cross-request) | APC (per-request, manual enable) | None native | None native |
+| **Prefix caching** | RadixAttention (automatic, cross-request) | APC (enabled by default in V1) | None native | None native |
 | **Structured output** | XGrammar compressed FSM (3-10x faster) | Outlines (slower FSM) | External | Outlines |
 | **Frontend DSL** | Yes (fork, gen, select, regex) | No | No | No |
 | **OpenAI API compat** | ✅ Full | ✅ Full | ✅ Via wrapper | ✅ Full |
@@ -431,7 +440,7 @@ SGLang is used as rollout backend by AReaL, Miles, slime, Tunix, verl. Native su
 
 3. **Grammar backend matters** — Default XGrammar is fastest. Fall back to `--grammar-backend outlines` only for edge cases XGrammar doesn't support.
 
-4. **`sglang serve` is the new entrypoint** — `python -m sglang.launch_server` still works but is deprecated.
+4. **`sglang serve` is a newer CLI subcommand** — equivalent to `python -m sglang.launch_server` (both use the same server arguments). The official docs still use `python -m sglang.launch_server` as the primary command; it is not deprecated.
 
 5. **Port default is 30000** — Not 8000 like vLLM. Change with `--port`.
 
@@ -444,9 +453,7 @@ SGLang is used as rollout backend by AReaL, Miles, slime, Tunix, verl. Native su
 ## 8. References
 
 - **GitHub**: https://github.com/sgl-project/sglang
-- **Project site**: https://sgl-project.github.io/
-- **Documentation**: https://docs.sglang.ai/
-- **Documentation (alt)**: https://docs.sglang.io/
+- **Documentation**: https://docs.sglang.io/
 - **Paper**: https://arxiv.org/abs/2312.07104 (SGLang: Efficient Execution of Structured Language Model Programs)
 - **Compressed FSM Blog**: https://lmsys.org/blog/2024-02-05-compressed-fsm/
 - **RadixAttention Blog**: https://lmsys.org/blog/2024-01-17-sglang/

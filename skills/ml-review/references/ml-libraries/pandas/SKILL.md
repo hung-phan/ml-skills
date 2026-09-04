@@ -1,6 +1,6 @@
 ---
 name: pandas
-description: Pandas DataFrames for tabular data — groupby, merge/join, pivot, read_csv/parquet, and idiomatic patterns including SettingWithCopyWarning fixes. Use when manipulating structured data, doing aggregations, or loading CSV/Parquet for ML pipelines.
+description: Pandas DataFrames for tabular data — groupby, merge/join, pivot, read_csv/parquet, and idiomatic patterns including chained-assignment fixes (SettingWithCopyWarning in pandas <3.0). Use when manipulating structured data, doing aggregations, or loading CSV/Parquet for ML pipelines.
 ---
 
 # Pandas Skill
@@ -17,7 +17,7 @@ description: Pandas DataFrames for tabular data — groupby, merge/join, pivot, 
 
 ## Triggers
 
-Use when user mentions: pandas, dataframe, series, groupby, merge, join, pivot, melt, read_csv, parquet, vectorized, SettingWithCopyWarning, chained indexing, memory optimization, window functions, rolling, apply, dtypes, categories.
+Use when user mentions: pandas, dataframe, series, groupby, merge, join, pivot, melt, read_csv, parquet, vectorized, SettingWithCopyWarning (pandas <3.0), chained indexing, chained assignment, Copy-on-Write, memory optimization, window functions, rolling, apply, dtypes, categories.
 
 ---
 
@@ -65,10 +65,12 @@ df.iat[0, 2]                        # position-based scalar
 ### ⚠️ Anti-pattern: Chained Indexing
 
 ```python
-# ❌ NEVER DO THIS — triggers SettingWithCopyWarning, may silently fail
+# ❌ NEVER DO THIS — chained assignment
+# pandas <3.0: triggers SettingWithCopyWarning, may silently fail
+# pandas >=3.0: Copy-on-Write is always on, so this silently no-ops with NO warning
 df[df["a"] > 1]["b"] = 99
 
-# ✅ ALWAYS use loc for assignment
+# ✅ ALWAYS use loc for assignment (correct on every version)
 df.loc[df["a"] > 1, "b"] = 99
 ```
 
@@ -227,7 +229,9 @@ def optimize_dtypes(df: pd.DataFrame) -> pd.DataFrame:
         df[col] = pd.to_numeric(df[col], downcast="integer")
     for col in df.select_dtypes(include=["float"]):
         df[col] = pd.to_numeric(df[col], downcast="float")
-    for col in df.select_dtypes(include=["object"]):
+    # pandas >=3.0 loads string columns as the dedicated `str` dtype, not
+    # `object` — include both so freshly-loaded strings are still detected.
+    for col in df.select_dtypes(include=["object", "string"]):
         if df[col].nunique() / len(df) < 0.5:
             df[col] = df[col].astype("category")
     return df
@@ -241,7 +245,7 @@ df["flag"] = df["flag"].astype("boolean") # nullable boolean
 
 ## 8. Common Pitfalls
 
-### SettingWithCopyWarning
+### SettingWithCopyWarning (pandas <3.0) / chained assignment
 
 ```python
 # Root cause: operating on a VIEW vs a COPY
@@ -256,10 +260,19 @@ subset["b"] = 99  # safe — modifying independent copy
 df.loc[df["a"] > 1, "b"] = 99
 ```
 
+**pandas 3.0 note:** Copy-on-Write is always on and `SettingWithCopyWarning`
+has been removed entirely. Chained assignment (`df[mask]["col"] = val`) now
+silently no-ops with **no warning at all** — the `.loc` fixes above remain the
+correct pattern on every version.
+
 ### pandas 2.0+ Copy-on-Write (CoW)
 
 ```python
-# Enable globally (default in pandas 3.0)
+# pandas >=3.0: CoW is UNCONDITIONALLY enabled and cannot be disabled.
+# The pd.options.mode.copy_on_write option is now a deprecated no-op
+# (scheduled for removal in pandas 4.0) — setting it has no effect.
+
+# pandas 2.x only: opt in to preview CoW behavior before upgrading
 pd.options.mode.copy_on_write = True
 # With CoW, every indexing op returns a copy — no more ambiguity
 ```
@@ -383,7 +396,7 @@ result = (
 | Loop `pd.concat` in for-loop | Collect list, concat once |
 | `df.iterrows()` for computation | Vectorized ops or `.values` |
 | Default dtypes for large data | Downcast + categories |
-| `df.append()` (deprecated) | `pd.concat([df, new])` |
+| `df.append()` (removed in 2.0 — raises AttributeError) | `pd.concat([df, new])` |
 | Read entire parquet file | `columns=` param for needed cols |
 | `axis=1` apply for string ops | Vectorized `.str` methods |
 | `inplace=True` everywhere | Method chaining (returns new df) |

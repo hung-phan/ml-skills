@@ -42,7 +42,7 @@ model_name = "meta-llama/Llama-3.1-8B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype="auto",
+    dtype="auto",  # transformers v5 renamed torch_dtype -> dtype; dtype now defaults to "auto", so this can often be omitted
     device_map="auto",  # shard across available GPUs
 )
 ```
@@ -84,7 +84,7 @@ trainer = Trainer(
     args=training_args,
     train_dataset=train_ds,
     eval_dataset=eval_ds,
-    tokenizer=tokenizer,
+    processing_class=tokenizer,  # transformers v5 renamed tokenizer= to processing_class=
 )
 trainer.train()
 trainer.push_to_hub("my-org/my-finetuned-model")
@@ -293,11 +293,11 @@ trainer = SFTTrainer(
         gradient_accumulation_steps=8,
         learning_rate=2e-4,
         bf16=True,
-        max_seq_length=2048,
+        max_length=2048,  # renamed from max_seq_length in TRL; older TRL still accepts it as a deprecated alias
         packing=True,  # pack short examples into one context window
     ),
     train_dataset=dataset,
-    processing_class=tokenizer,  # replaces deprecated tokenizer= arg (TRL ≥0.13)
+    processing_class=tokenizer,  # replaces tokenizer= arg (removed in current TRL v1.x)
     peft_config=lora_config,
 )
 trainer.train()
@@ -311,7 +311,7 @@ trainer.save_model("./sft-lora-adapter")
 # SFTTrainer applies tokenizer.apply_chat_template() automatically
 ```
 
-> **API note**: `SFTTrainer(tokenizer=...)` was deprecated in TRL 0.13. Use `processing_class=tokenizer`. The base `Trainer` made the same rename.
+> **API note**: `SFTTrainer(tokenizer=...)` was deprecated back in TRL 0.13 and is now fully removed as of current TRL (v1.x) — the signature only exposes `processing_class`. The base `Trainer` made the same rename, and `tokenizer=` is likewise removed in transformers v5.
 
 | | `Trainer` | `SFTTrainer` |
 |--|-----------|-------------|
@@ -441,7 +441,7 @@ def generate(prompt):
 gr.Interface(fn=generate, inputs="text", outputs="text").launch()
 ```
 
-Deploy with `huggingface-cli repo create --type space --space_sdk gradio`.
+Deploy with `hf repo create <name> --repo-type space --sdk gradio` (the `huggingface-cli` command was renamed to `hf`; the old name remains only as a deprecated alias).
 
 ---
 
@@ -473,7 +473,7 @@ training_args = TrainingArguments(..., gradient_checkpointing=True)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
     attn_implementation="flash_attention_2",
-    torch_dtype=torch.bfloat16,
+    dtype=torch.bfloat16,  # transformers v5 renamed torch_dtype -> dtype
 )
 ```
 
@@ -485,7 +485,7 @@ model = AutoModelForCausalLM.from_pretrained(
 |-------|-----|
 | OOM on large models | Use `device_map="auto"` + `torch_dtype=torch.bfloat16` or QLoRA |
 | Tokenizer has no pad token | `tokenizer.pad_token = tokenizer.eos_token` |
-| `push_to_hub` auth error | Run `huggingface-cli login` or set `HF_TOKEN` env var |
+| `push_to_hub` auth error | Run `hf auth login` (formerly `huggingface-cli login`) or set `HF_TOKEN` env var |
 | Slow tokenization | Ensure you're using fast tokenizer (default); check `tokenizer.is_fast` |
 | LoRA target modules wrong | Check `model.named_modules()` for actual linear layer names |
 | Streaming dataset can't shuffle | Use `.shuffle(buffer_size=10000)` on IterableDataset |

@@ -60,7 +60,7 @@ def train_func(config):
     model_name = config["model_name"]
 
     # Load model + tokenizer INSIDE train_func (not serialized from driver)
-    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto")
+    model = AutoModelForCausalLM.from_pretrained(model_name, dtype="auto")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -77,7 +77,7 @@ def train_func(config):
     training_args = SFTConfig(
         output_dir="/tmp/sft_output",
         dataset_text_field="text",
-        max_seq_length=2048,
+        max_length=2048,
         per_device_train_batch_size=2,
         gradient_accumulation_steps=4,
         num_train_epochs=1,
@@ -94,7 +94,7 @@ def train_func(config):
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         train_dataset=dataset,
         peft_config=peft_config,
         args=training_args,
@@ -187,9 +187,9 @@ FSDP shards model parameters across GPUs — each GPU holds 1/N of the model. Go
 
 ---
 
-## Unsloth + Ray (Limited)
+## Unsloth + Ray
 
-Unsloth's Triton kernels only support DDP (not FSDP). If you must use Unsloth distributed:
+Unsloth now supports multi-GPU training — DDP, FSDP, and DeepSpeed — launched via Accelerate or `torchrun`, and supports 4-bit/QLoRA loading (use `device_map="balanced"` to shard large models across GPUs). Inside a Ray `train_func` you can drive an Unsloth model much like the standard example:
 
 ```python
 def train_func():
@@ -200,17 +200,13 @@ def train_func():
     model, tokenizer = FastLanguageModel.from_pretrained(
         "unsloth/llama-3.1-8b-instruct-unsloth-bnb-4bit",
         max_seq_length=2048,
-        load_in_4bit=False,  # DDP requires 16-bit (QLoRA + DDP broken)
-        device_map={"": int(os.environ.get("LOCAL_RANK", 0))},
+        load_in_4bit=True,          # 4-bit / QLoRA supported
+        device_map="balanced",      # shard large models across GPUs
     )
-    # ... rest same, but:
-    # - batch_size=1 only (current limitation)
-    # - ddp_find_unused_parameters=False required
+    # ... rest same as the standard example
 ```
 
-**Limitations**: No 4-bit, batch_size=1, no FSDP. Better to use standard HF + Ray for distributed.
-
-GitHub issue: https://github.com/unslothai/unsloth/issues/2266
+Unsloth multi-GPU docs: https://docs.unsloth.ai/basics/multi-gpu-training-with-unsloth
 
 ---
 
@@ -228,5 +224,5 @@ GitHub issue: https://github.com/unslothai/unsloth/issues/2266
 ## References
 
 - Official docs (Ray Train): https://docs.ray.io/en/latest/train/train.html
-- GitHub (DeepSpeed): https://github.com/microsoft/DeepSpeed
+- GitHub (DeepSpeed): https://github.com/deepspeedai/DeepSpeed
 - HuggingFace Accelerate + DeepSpeed guide: https://huggingface.co/docs/accelerate/main/en/usage_guides/deepspeed

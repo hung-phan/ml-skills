@@ -244,7 +244,7 @@ import torch
 
 pipe = StableDiffusionPipeline.from_pretrained(
     "stabilityai/stable-diffusion-2-1",
-    torch_dtype=torch.float16
+    dtype=torch.float16
 ).to("cuda")
 pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
 
@@ -308,8 +308,10 @@ for batch in dataloader:
     optimizer.step()
     optimizer.zero_grad()
 
-unet.save_pretrained("./lora_weights")
-pipe.unet.load_attn_procs("./lora_weights")
+# Save/reload with the diffusers-native LoRA path.
+pipe.unet.save_lora_adapter("./lora_weights")          # or StableDiffusionLoraLoaderMixin.save_lora_weights
+pipe.load_lora_weights("./lora_weights")               # or pipe.unet.load_lora_adapter("./lora_weights", prefix="unet")
+# Note: load_attn_procs is now Custom-Diffusion-only and raises ValueError on LoRA state dicts.
 ```
 
 ## Training Template (Custom Dataset)

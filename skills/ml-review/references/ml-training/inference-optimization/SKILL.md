@@ -194,7 +194,7 @@ def speculative_step(target_model, draft_model, prefix_ids, K=5, temperature=0.0
 - **Draft model size**: usually 5–20× smaller than target. Llama-3-70B + Llama-3-8B works. Train a custom 1B draft for a 70B target if you can.
 - **K** (draft length): larger K = fewer target calls but lower acceptance. K=4–7 is the sweet spot.
 - **Don't combine with already-saturated MBU**: if your MBU is already 90% (large batch, well-tuned engine), spec decoding gives nothing — the FLOPs aren't free.
-- vLLM, TensorRT-LLM, SGLang, llama.cpp all support it. In vLLM: `speculative_model="..."` + `num_speculative_tokens=K`.
+- vLLM, TensorRT-LLM, SGLang, llama.cpp all support it. In vLLM: pass `speculative_config={"model": "...", "num_speculative_tokens": K}`.
 
 ### 5.2 Inference with Reference (LLMA)
 
@@ -327,7 +327,7 @@ If you self-host, replicate this internally: tag low-urgency requests, push them
 | **vLLM** | General-purpose default | PagedAttention, continuous batching, prefix caching, broad model support, easy to deploy | Less aggressive on lowest-latency single-request than TRT-LLM |
 | **SGLang** | Structured outputs, multi-turn, agents | RadixAttention prefix caching, structured generation, fastest in many recent benchmarks | Younger, smaller community |
 | **TensorRT-LLM** | Lowest latency on NVIDIA | Fastest single-request on Hopper/Blackwell, FP8 native, deep TRT integration | Hard to deploy, NVIDIA-only, build-time engine compilation per model+shape |
-| **TGI (HuggingFace Text Generation Inference)** | Managed-style HF stack | Solid defaults, HF Hub integration, Rust core | Behind vLLM/SGLang on raw throughput |
+| **TGI (HuggingFace Text Generation Inference)** | Managed-style HF stack | Solid defaults, HF Hub integration, Rust core | Behind vLLM/SGLang on raw throughput; in maintenance mode since 2025 (only minor fixes accepted) — maintainers recommend vLLM/SGLang for new deployments |
 | **llama.cpp** | CPU / edge / quantized GGUF | Runs anywhere — Mac, ARM, x86, mobile; great GGUF quant support | Not a high-throughput multi-tenant server |
 | **Triton Inference Server** | Multi-model serving, framework-agnostic | Deploy LLM + embeddings + reranker behind one server, with TRT-LLM/vLLM/Python backends | Not LLM-specific itself; you still pick an LLM backend |
 
@@ -337,6 +337,7 @@ If you self-host, replicate this internally: tag low-urgency requests, push them
 - Switch to **TensorRT-LLM** if you are H100/H200/B200-only and need the absolute lowest p50 TTFT — accept the deploy complexity.
 - **llama.cpp** for CPU/Mac/edge/laptop or aggressive quantization (GGUF Q4_K_M is excellent for local).
 - **Triton** when you serve multiple models behind one endpoint (LLM + embedder + reranker).
+- **Avoid TGI for greenfield serving** — it entered maintenance mode in 2025 (only minor bug fixes accepted), and its maintainers now recommend vLLM/SGLang for new deployments.
 
 ### 8.1 vLLM Example: Speculative + Prefix Caching + INT4
 
@@ -350,8 +351,7 @@ llm = LLM(
     tensor_parallel_size=2,                  # shard across 2 GPUs
     max_model_len=8192,
     enable_prefix_caching=True,              # share KV across same-prefix requests
-    speculative_model="meta-llama/Meta-Llama-3-8B-Instruct",
-    num_speculative_tokens=5,
+    speculative_config={"method": "draft_model", "model": "meta-llama/Meta-Llama-3-8B-Instruct", "num_speculative_tokens": 5},
     gpu_memory_utilization=0.9,              # 90% of HBM for weights+KV
     swap_space=4,                            # GB CPU swap for spillover
 )
@@ -378,8 +378,7 @@ python -m vllm.entrypoints.openai.api_server \
     --tensor-parallel-size 2 \
     --enable-prefix-caching \
     --max-model-len 8192 \
-    --speculative-model meta-llama/Meta-Llama-3-8B-Instruct \
-    --num-speculative-tokens 5
+    --speculative-config '{"method": "draft_model", "model": "meta-llama/Meta-Llama-3-8B-Instruct", "num_speculative_tokens": 5}'
 ```
 
 Now your existing OpenAI SDK code points at `http://localhost:8000/v1` and works unchanged.
@@ -403,7 +402,9 @@ def multi_turn_qa(s, system_prompt, history, question):
 
 # Launch the server with RadixAttention prefix cache enabled (default)
 # python -m sglang.launch_server --model-path meta-llama/Meta-Llama-3-70B-Instruct \
-#     --tp 2 --enable-flashinfer --mem-fraction-static 0.85
+#     --tp 2 --mem-fraction-static 0.85
+# SGLang auto-selects the attention backend (fa3 on Hopper H100/H200, flashinfer on A100-class GPUs);
+# pin one explicitly with --attention-backend flashinfer if needed.
 ```
 
 ---
@@ -509,7 +510,7 @@ If your numbers are **substantially worse** (e.g., MBU < 30% at batch=1, TPOT > 
 ## References
 
 - vLLM documentation: https://docs.vllm.ai/en/latest/
-- SGLang documentation: https://docs.sglang.ai/
+- SGLang documentation: https://docs.sglang.io/
 - TensorRT-LLM documentation: https://nvidia.github.io/TensorRT-LLM/
 - HuggingFace TGI: https://huggingface.co/docs/text-generation-inference/index
 - Kwon et al., "Efficient Memory Management for Large Language Model Serving with PagedAttention" (vLLM, 2023): https://arxiv.org/abs/2309.06180

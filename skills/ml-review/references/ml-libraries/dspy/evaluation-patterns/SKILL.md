@@ -95,7 +95,8 @@ def metric(example, pred, trace=None):
 
 ```python
 evaluator = dspy.Evaluate(devset=valset, metric=metric, num_threads=8, failure_score=0.0)
-result = evaluator(program)  # returns aggregate score
+result = evaluator(program)  # returns dspy.EvaluationResult
+score = result.score  # float percentage, e.g. 67.30; result.results is list of (example, prediction, score) tuples
 ```
 
 ## Gotchas

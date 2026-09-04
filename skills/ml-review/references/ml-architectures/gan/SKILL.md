@@ -203,18 +203,22 @@ loss_g = -D(fake).mean()
 
 ## Spectral Normalization
 
+Use the parametrization-based `nn.utils.parametrizations.spectral_norm`. The older `torch.nn.utils.spectral_norm` is slated for deprecation in a future PyTorch release.
+
 ```python
+from torch.nn.utils.parametrizations import spectral_norm
+
 class SNDiscriminator(nn.Module):
     def __init__(self, nc=3, ndf=64):
         super().__init__()
         self.main = nn.Sequential(
-            nn.utils.spectral_norm(nn.Conv2d(nc, ndf, 4, 2, 1)),
+            spectral_norm(nn.Conv2d(nc, ndf, 4, 2, 1)),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.utils.spectral_norm(nn.Conv2d(ndf, ndf * 2, 4, 2, 1)),
+            spectral_norm(nn.Conv2d(ndf, ndf * 2, 4, 2, 1)),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.utils.spectral_norm(nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1)),
+            spectral_norm(nn.Conv2d(ndf * 2, ndf * 4, 4, 2, 1)),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.utils.spectral_norm(nn.Conv2d(ndf * 4, 1, 4, 1, 0)),
+            spectral_norm(nn.Conv2d(ndf * 4, 1, 4, 1, 0)),
         )
 
     def forward(self, x):

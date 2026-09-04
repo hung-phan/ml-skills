@@ -671,7 +671,7 @@ def tsne_embedding(
         n_components=n_components,
         perplexity=perplexity,
         random_state=42,
-        n_iter=1000,
+        max_iter=1000,  # was `n_iter`: renamed to `max_iter` in scikit-learn 1.5, removed in 1.7
     )
     X_embedded = tsne.fit_transform(X_scaled)
 

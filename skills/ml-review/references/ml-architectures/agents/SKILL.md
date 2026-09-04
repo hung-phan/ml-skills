@@ -5,7 +5,7 @@ description: LLM agents — tool use, planning loops (ReAct, Reflexion, plan-the
 
 ## Why This Exists
 
-**Problem.** A raw LLM is a frozen function from prompt to text. It can't read your DB, hit an API, run code, or check whether the answer it just produced is right. Hand-written `if/else` workflows that paper over this are brittle: every new tool, every new edge case is a new branch, and they don't generalize. Agents promise to fix this — let the LLM decide which tool to call, observe the result, and adapt — but they fail in subtle, expensive, hard-to-debug ways. Public benchmarks tell the honest story: GAIA, an "easy for humans, hard for assistants" benchmark, sits around the 40-60% range for the best frontier agents, and SWE-bench Verified hovers near 50-65% on real GitHub issues. Multi-agent setups frequently underperform a single strong agent.
+**Problem.** A raw LLM is a frozen function from prompt to text. It can't read your DB, hit an API, run code, or check whether the answer it just produced is right. Hand-written `if/else` workflows that paper over this are brittle: every new tool, every new edge case is a new branch, and they don't generalize. Agents promise to fix this — let the LLM decide which tool to call, observe the result, and adapt — but they fail in subtle, expensive, hard-to-debug ways. Public benchmarks tell the honest story: GAIA, an "easy for humans, hard for assistants" benchmark, sits around the 40-60% range for the best frontier agents, and SWE-bench Verified now reaches ~70-82% on real GitHub issues for frontier agents as of late 2025 (e.g., Claude Sonnet 4.5 ~77%). Multi-agent setups frequently underperform a single strong agent.
 
 **Key insight.** An agent is just `LLM + tool inventory + control loop + memory`. The LLM is the planner. Tools are the actuators. The control loop is where prompting meets engineering — most agent failures live here, not in the model. Memory is what stops the loop from being amnesiac. Understand each part separately or you'll cargo-cult a framework and never escape its abstractions when it breaks.
 
@@ -506,12 +506,12 @@ Evaluate at two levels: per-step (did the agent take the right action?) and end-
 | Benchmark | What it tests | Notes |
 |---|---|---|
 | **BFCL** (Berkeley Function Calling Leaderboard) | Function call selection + parameter accuracy across 2k+ APIs | The standard for "can your model do tool use." |
-| **SWE-bench / SWE-bench Verified** | Resolve real GitHub issues by editing repo code | Frontier ~50-65% on Verified subset. The hardest mainstream agent benchmark. |
+| **SWE-bench / SWE-bench Verified** | Resolve real GitHub issues by editing repo code | Frontier ~70-82% on Verified subset as of late 2025 (e.g., Claude Sonnet 4.5 ~77%). The hardest mainstream agent benchmark. |
 | **GAIA** | Multi-step questions easy for humans, hard for assistants | Frontier ~40-60%. Tests browsing, file handling, multi-modal. |
 | **AgentBench** | Suite covering OS, DB, web, knowledge graph, code | Broad capability map. |
 | **TravelPlanner** | Plan a trip under constraints | Tests constraint satisfaction over many tools. SOTA still <50%. |
 | **WebArena** / **VisualWebArena** | Real web tasks in self-hosted clones of GitLab, Reddit, etc. | Tests web automation. |
-| **OSWorld** | Real desktop OS tasks (open apps, edit files) | Frontier <20%. Computer-use is hard. |
+| **OSWorld** | Real desktop OS tasks (open apps, edit files) | Frontier ~55-65% (Claude Sonnet 4.5 ~61.4% on OSWorld-Verified as of late 2025). Still the hardest GUI/computer-use benchmark, far above the original ~12% baseline. |
 
 Build your own internal benchmark too — public benchmarks measure general capability, your benchmark measures *your* agent's reliability on *your* tasks. Aim for 50-200 representative examples with deterministic graders where possible.
 
@@ -550,7 +550,7 @@ Tools: **Langfuse**, **LangSmith**, **OpenTelemetry GenAI semantic conventions**
 | **smolagents** (Hugging Face) | Code-as-action paradigm — agents write Python that calls tools. Small, hackable. | Low — readable code, easy to port. |
 | **AutoGen** (Microsoft) | Conversational multi-agent with explicit speaker selection, group chat. | High — assumes its message-passing model. |
 | **CrewAI** | Quick demos of role-played multi-agent (researcher + writer + editor). | Medium-High — opinionated abstractions. |
-| **OpenAI Assistants API** | Hosted threads, file search, code interpreter without infra. | High — you don't own the state. |
+| **OpenAI Responses API + Agents SDK** | Hosted threads/file-search/code-interpreter (Responses API) plus a managed loop (Agents SDK). Replaces the **Assistants API**, which is deprecated with a sunset date of Aug 26, 2026. | High — you don't own the state. |
 
 The Anthropic / Cognition stance, with which much of the research community agrees: **build the agent loop yourself in plain code first**. Reach for a framework when (a) you've identified a specific abstraction you'll reuse 5+ times, or (b) you need infra (persistence, observability) the framework provides for free. Don't pick a framework because it has the most stars — debug a leak in someone else's state machine once and you'll see why.
 
@@ -625,14 +625,14 @@ Honest take: prompting + a strong frontier model usually beats fine-tuning a sma
 - [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling) — provider docs.
 - [Anthropic Tool Use Overview](https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview) — provider docs.
 - [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling) — provider docs.
-- [Llama 3.1 Prompt Formats (incl. tool calling)](https://llama.meta.com/docs/model-cards-and-prompt-formats/llama3_1/) — open-model tool format.
+- [Llama 3.1 Prompt Formats (incl. tool calling)](https://www.llama.com/docs/model-cards-and-prompt-formats/llama3_1/) — open-model tool format.
 
 ### Frameworks
 
 - [LangGraph](https://github.com/langchain-ai/langgraph) — state-machine agent framework.
 - [smolagents](https://github.com/huggingface/smolagents) — minimal code-as-action agent library.
 - [AutoGen](https://github.com/microsoft/autogen) — multi-agent conversation framework.
-- [CrewAI](https://github.com/joaomdmoura/crewAI) — role-based multi-agent framework.
+- [CrewAI](https://github.com/crewAIInc/crewAI) — role-based multi-agent framework.
 
 ### Benchmarks & leaderboards
 
@@ -643,7 +643,7 @@ Honest take: prompting + a strong frontier model usually beats fine-tuning a sma
 - [TravelPlanner (Xie et al., 2024)](https://arxiv.org/abs/2402.07939) — constraint-satisfying travel planning.
 - [SWE-bench (Jimenez et al., 2024)](https://arxiv.org/abs/2310.06770) — paper introducing the benchmark.
 - [WebArena](https://webarena.dev/) — self-hosted realistic web environments.
-- [OSWorld](https://os-world.github.io/) — real OS desktop tasks.
+- [OSWorld](https://osworld-v1.xlang.ai/) — real OS desktop tasks.
 
 ### Observability
 
@@ -653,4 +653,4 @@ Honest take: prompting + a strong frontier model usually beats fine-tuning a sma
 ### Critical takes worth reading
 
 - [Sycophancy in Language Models (Sharma et al., 2023)](https://arxiv.org/abs/2310.13548) — relevant to "false completion" failures.
-- [The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions (Wallace et al., 2024)](https://arxiv.org/abs/2311.07911) — defense against tool-output prompt injection.
+- [The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions (Wallace et al., 2024)](https://arxiv.org/abs/2404.13208) — defense against tool-output prompt injection.

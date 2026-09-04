@@ -394,8 +394,25 @@ out = policy(td, env, decode_type="greedy")
 print(out["reward"].mean())               # negative tour length
 ```
 
-To enable POMO, set `baseline="shared"` and `num_starts=N` (e.g. 50) — this
-turns on the multi-trajectory data augmentation across N start nodes.
+To enable POMO, use the dedicated `POMO` model class rather than the
+`AttentionModel` path — it is the idiomatic route and applies POMO's
+`dihedral8` symmetry augmentation, which the plain `AttentionModel` does not:
+
+```python
+from rl4co.models import POMO, AttentionModelPolicy
+
+model = POMO(
+    env, policy,
+    num_starts=50,             # multi-trajectory rollouts, one per start node
+    num_augment=8,             # dihedral8 symmetry augmentation
+    optimizer_kwargs={"lr": 1e-4},
+)
+```
+
+`POMO` defaults to `baseline="shared"` (and asserts it) and handles
+`num_starts` / `num_augment` internally. Setting
+`AttentionModel(baseline="shared", num_starts=N)` still runs as a lower-level
+alternative, but it does not apply the dihedral8 augmentation.
 
 ### 2. Hybrid: NCO proposes, 2-opt refines
 
@@ -547,7 +564,7 @@ generalization beyond.
 
 ## References
 
-Verified 2026-06-05 (`curl -sIL`, all return HTTP 200):
+Verified 2026-09-03 (each link's title/authors confirmed against the cited work, not just HTTP status):
 
 - RL4CO framework — https://github.com/ai4co/rl4co
 - Vinyals, Fortunato, Jaitly. *Pointer Networks* (2015) — https://arxiv.org/abs/1506.03134
@@ -555,8 +572,8 @@ Verified 2026-06-05 (`curl -sIL`, all return HTTP 200):
 - Kool, van Hoof, Welling. *Attention, Learn to Solve Routing Problems!* (2018) — https://arxiv.org/abs/1803.08475
 - Bengio, Lodi, Prouvost. *Machine Learning for Combinatorial Optimization: a Methodological Tour d'Horizon* (2018, EJOR 2021) — https://arxiv.org/abs/1811.06128
 - Kwon, Choo, Kim, Yoon, Min, Gwon. *POMO: Policy Optimization with Multiple Optima for RL* (2020) — https://arxiv.org/abs/2010.16011
-- Sun, Yang. *DIFUSCO: Graph-based Diffusion Solvers for Combinatorial Optimization* (2023) — https://arxiv.org/abs/2310.10709
+- Sun, Yang. *DIFUSCO: Graph-based Diffusion Solvers for Combinatorial Optimization* (2023) — https://arxiv.org/abs/2302.08224
 - Gasse, Chételat, Ferroni, Charlin, Lodi. *Exact Combinatorial Optimization with GCNs* (2019, NeurIPS) — https://arxiv.org/abs/1906.01629
-- Zhang, Song, Cao, Zhang, Tan, Chi. *Learning to Dispatch for JSSP via Deep RL* (L2D, 2020) — https://arxiv.org/abs/2010.16317
+- Zhang, Song, Cao, Zhang, Tan, Xu. *Learning to Dispatch for JSSP via Deep RL* (L2D, 2020) — https://arxiv.org/abs/2010.12367
 - Google OR-Tools — https://developers.google.com/optimization
 - Gurobi Optimizer — https://www.gurobi.com/

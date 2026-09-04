@@ -323,7 +323,8 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 import gymnasium as gym
 
 # Vectorized environments (parallel rollouts)
-env = make_vec_env("HalfCheetah-v4", n_envs=4, vec_env_cls=SubprocVecEnv)
+# v5 is the current MuJoCo env version since Gymnasium 1.0 (requires mujoco>=2.3.3)
+env = make_vec_env("HalfCheetah-v5", n_envs=4, vec_env_cls=SubprocVecEnv)
 
 # PPO with custom hyperparams
 model = PPO(
@@ -340,7 +341,7 @@ model = PPO(
 )
 
 # Callbacks
-eval_env = gym.make("HalfCheetah-v4")
+eval_env = gym.make("HalfCheetah-v5")
 callbacks = [
     EvalCallback(eval_env, eval_freq=10_000, best_model_save_path="./best/"),
     CheckpointCallback(save_freq=50_000, save_path="./checkpoints/"),

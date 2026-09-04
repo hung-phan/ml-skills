@@ -66,8 +66,11 @@ def build_mlp(in_features, hidden, out_features, dropout=0.1):
 | **GELU** | `x · Φ(x)` ≈ `0.5x(1 + tanh(√(2/π)(x + 0.044715x³)))` | Smooth, probabilistic gating, better for NLP | Slightly slower than ReLU | Transformers (BERT, GPT, ViT) |
 | **SiLU/Swish** | `x · σ(x)` | Smooth, non-monotonic, self-gated | Unbounded below (can produce small negatives) | EfficientNet, modern vision |
 | **Leaky ReLU** | `max(αx, x)`, α=0.01 | No dead neurons | Marginal improvement over ReLU | When dead neurons are a problem |
+| **SwiGLU** (GLU family) | `SiLU(xW+b) ⊗ (xV+c)` | Best FFN quality in modern LLMs; gated, self-tuning info flow | Adds a 3rd weight matrix (hidden dim usually scaled by 2/3 to keep params constant) | Transformer FFNs (LLaMA/PaLM/Mixtral/Qwen) |
 
-**Practical rule**: GELU for transformers, SiLU/Swish for modern vision, ReLU everywhere else unless you have a reason.
+**Practical rule**: GELU for transformers (activations), SwiGLU for transformer FFN layers, SiLU/Swish for modern vision, ReLU everywhere else unless you have a reason.
+
+> **SwiGLU / GLU family**: A gated FFN activation that splits the projection into a *gate* branch and a *value* branch, then multiplies them elementwise — `SwiGLU(x) = SiLU(xW + b) ⊗ (xV + c)`. Because it introduces a third weight matrix, the FFN hidden dimension is typically scaled by `2/3` to keep parameter count constant. Variants swap the gate activation: GEGLU (GELU gate), ReGLU (ReLU gate). Now standard in LLaMA/LLaMA-2/3, PaLM, Mixtral, and Qwen FFNs. See [Shazeer 2020, "GLU Variants Improve Transformer"](https://arxiv.org/abs/2002.05202).
 
 ```python
 # PyTorch
@@ -91,8 +94,8 @@ Poor initialization → vanishing/exploding activations from layer 1.
 |--------|--------------------------------------|----------|
 | **Xavier/Glorot Uniform** | `U(-√(6/(n_in+n_out)), √(6/(n_in+n_out)))` | Sigmoid, Tanh, Linear |
 | **Xavier/Glorot Normal** | `N(0, 2/(n_in+n_out))` | Same |
-| **He/Kaiming Uniform** | `U(-√(6/n_in), √(6/n_in))` | ReLU, Leaky ReLU |
-| **He/Kaiming Normal** | `N(0, 2/n_in)` | ReLU (default PyTorch for Linear) |
+| **He/Kaiming Uniform** | `U(-√(6/n_in), √(6/n_in))` | ReLU, Leaky ReLU (PyTorch default for Linear, a=√5) |
+| **He/Kaiming Normal** | `N(0, 2/n_in)` | ReLU |
 
 **Intuition**: Maintain variance of activations ≈ 1 across layers. ReLU zeros half the distribution → need 2× variance → He init.
 
@@ -412,6 +415,6 @@ These framings are why ReLU + He init swept the field — they sidestep both fai
 
 ## References
 
-- [PyTorch nn Module](https://pytorch.org/docs/stable/nn.html) — Complete neural network building blocks
+- [PyTorch nn Module](https://docs.pytorch.org/docs/stable/nn.html) — Complete neural network building blocks
 - [Batch Normalization (Ioffe & Szegedy, 2015)](https://arxiv.org/abs/1502.03167) — Accelerating deep network training
 - Rashid, Tariq — *Make Your Own Neural Network* (2016) — origin of the back-query interpretability trick: https://makeyourownneuralnetwork.blogspot.com/

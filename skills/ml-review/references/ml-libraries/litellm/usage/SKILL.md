@@ -192,8 +192,10 @@ import litellm
 
 litellm.drop_params = True       # ignore unsupported params per provider
 litellm.modify_params = True     # auto-adjust for provider compatibility
-litellm.set_verbose = True       # debug logging
+litellm._turn_on_debug()         # debug logging (or: os.environ["LITELLM_LOG"] = "DEBUG")
 ```
+
+> `litellm.set_verbose = True` is deprecated. Use `litellm._turn_on_debug()` or set `os.environ["LITELLM_LOG"] = "DEBUG"` instead.
 
 ## Gotchas
 

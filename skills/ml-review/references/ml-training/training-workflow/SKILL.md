@@ -153,7 +153,9 @@ print(f"Best trial: {study.best_trial.value:.4f}")
 print(f"Best params: {study.best_trial.params}")
 
 # --- Optuna + sklearn integration (OptunaSearchCV) ---
-from optuna.integration import OptunaSearchCV
+# Integrations moved to a separate package: pip install optuna-integration
+# (`optuna.integration` still aliases it but requires the extra package installed)
+from optuna_integration import OptunaSearchCV
 
 param_dist = {
     'n_estimators': optuna.distributions.IntDistribution(50, 500),
@@ -167,21 +169,39 @@ optuna_cv = OptunaSearchCV(
 optuna_cv.fit(X_train, y_train)
 print(f"Best: {optuna_cv.best_score_:.4f}")
 
-# --- Ray Tune (brief) ---
+# --- Ray Tune (native API; distributed tuning) ---
+# NOTE: the old tune-sklearn `TuneSearchCV` wrapper is archived/deprecated
+# (final release 0.5.0, only supports ray<=2.9). On modern Ray (2.10+) use the
+# native tune.Tuner API below, or Optuna with a shared RDB storage backend.
 from ray import tune
-from ray.tune.sklearn import TuneSearchCV
+from ray.tune.search.optuna import OptunaSearch
+from sklearn.model_selection import cross_val_score
 
-param_dist = {
+def objective(config):
+    model = GradientBoostingClassifier(
+        n_estimators=config['n_estimators'],
+        max_depth=config['max_depth'],
+        learning_rate=config['learning_rate'],
+        random_state=42,
+    )
+    scores = cross_val_score(model, X_train, y_train, cv=5, scoring='f1_macro')
+    return {'f1_macro': scores.mean()}
+
+search_space = {
     'n_estimators': tune.randint(50, 500),
     'max_depth': tune.randint(3, 15),
     'learning_rate': tune.loguniform(1e-3, 0.3),
 }
-tune_search = TuneSearchCV(
-    GradientBoostingClassifier(random_state=42),
-    param_dist, n_trials=50, cv=5, scoring='f1_macro',
-    early_stopping=True, max_iters=10
+tuner = tune.Tuner(
+    objective,
+    param_space=search_space,
+    tune_config=tune.TuneConfig(
+        metric='f1_macro', mode='max',
+        search_alg=OptunaSearch(), num_samples=50,
+    ),
 )
-tune_search.fit(X_train, y_train)
+results = tuner.fit()
+print(f"Best config: {results.get_best_result().config}")
 ```
 
 ---
@@ -321,7 +341,8 @@ with mlflow.start_run(run_name="rf-tuned"):
     mlflow.log_metric("cv_f1_std", scores.std())
     mlflow.log_metric("test_f1", f1_score(y_test, model.predict(X_test), average='macro'))
 
-    mlflow.sklearn.log_model(model, "model")
+    # MLflow 3.x: pass name= (positional artifact_path is deprecated)
+    mlflow.sklearn.log_model(model, name="model")
     mlflow.log_artifact("learning_curve.png")
 
 # --- Weights & Biases ---
@@ -664,7 +685,7 @@ model = train_model(X_train, y_train, X_val, y_val, config={
 | Small param grid (<100 combos) | GridSearchCV |
 | Large search space | RandomizedSearchCV or Optuna |
 | Need pruning/Bayesian search | Optuna with MedianPruner |
-| Distributed tuning | Ray Tune |
+| Distributed tuning | Ray Tune (native `tune.Tuner`) or Optuna + shared RDB storage |
 | Prevent overfitting deep models | Early stopping with patience |
 | Diagnose under/overfitting | Learning curves |
 | Team experiment tracking | MLflow (self-hosted) or W&B (cloud) |
@@ -679,7 +700,7 @@ model = train_model(X_train, y_train, X_val, y_val, config={
 1. **Data leakage in CV**: Fit preprocessors inside each fold, not on full data. Use `Pipeline` to ensure transformations are fold-aware.
 2. **Optimistic nested CV**: Using the same CV splitter for inner and outer loops inflates scores. Always use different random states.
 3. **Time series shuffle**: Never `shuffle=True` with time series data — future leaks into past.
-4. **GroupKFold + stratification**: `GroupKFold` doesn't stratify. Use `StratifiedGroupKFold` (sklearn ≥1.1) if you need both.
+4. **GroupKFold + stratification**: `GroupKFold` doesn't stratify. Use `StratifiedGroupKFold` (sklearn ≥1.0) if you need both.
 5. **Optuna SQLite concurrency**: Default in-memory storage isn't parallel-safe. Use `optuna.storages.RDBStorage("sqlite:///study.db")` for multi-worker.
 6. **ONNX float types**: sklearn uses float64 internally but ONNX prefers float32. Always cast input to `float32` before inference.
 7. **Reproducibility with DataLoader**: Must set `worker_init_fn` AND `generator` — `torch.manual_seed` alone doesn't seed workers.

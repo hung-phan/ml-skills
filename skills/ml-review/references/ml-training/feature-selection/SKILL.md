@@ -293,7 +293,11 @@ stable_feats, freqs = stability_selection(
 print(f"Stable features (freq >= 0.7): {stable_feats}")
 print(f"Their frequencies: {freqs[stable_feats]}")
 
-# Using stability-selection library
+# --- (Legacy/optional) stability-selection library ---
+# NOTE: scikit-learn-contrib/stability-selection was archived (read-only) on 2023-12-06
+# and is unmaintained. It targets an older scikit-learn API and may not install or run on
+# modern scikit-learn (1.9+). Prefer the hand-rolled stability_selection() function above;
+# this snippet is kept for reference only.
 from stability_selection import StabilitySelection
 
 selector = StabilitySelection(

@@ -109,7 +109,7 @@ where `Ω = arccos(<θ_A, θ_B> / (||θ_A||·||θ_B||))` and `t ∈ [0, 1]`. SLE
 Take layers `[0..k]` from model A and layers `[k+1..N]` from model B (or interleave). Output is a different size than either constituent; almost always requires post-merge SFT to recover. Goliath-120B (alpindale, 2023) was built this way from two Llama-2-70B finetunes (Xwin + Euryale, 72 of 80 layers each).
 
 ### 7. Depthwise upscaling (Kim et al. 2023, SOLAR-10.7B)
-A specific frankenmerge for **growing** a model: copy the base, sum N overlapping layers, stack the rest. SOLAR-10.7B = 32-layer 7B doubled to 64, with 16 middle layers summed → 48 layers, then continued pretrained.
+A specific frankenmerge for **growing** a model: copy the base, then drop the seam layers — remove the final m layers of the original copy and the initial m layers of the duplicate — and concatenate the rest. SOLAR-10.7B: from a 32-layer 7B, duplicate it, remove the last 8 and first 8 layers at the join (16 layers dropped), concatenate the two 24-layer stacks → 48 layers (s = 2·(n−m)), then continue pretraining.
 
 ### 8. Evolutionary merging (Akiba et al. 2024 / Sakana AI)
 Treat per-layer merge weights and layer-assignment indices as a vector, optimize with CMA-ES against a held-out eval. Found non-obvious recipes that beat hand-tuned merges, especially across-domain (e.g. Japanese-LLM × math-LLM → Japanese-math LLM). Expensive — needs hundreds of eval rollouts — but completely automatic.
@@ -303,7 +303,7 @@ model.add_weighted_adapter(
     adapters=["math", "code", "chat"],
     weights=[0.4, 0.3, 0.3],
     adapter_name="combined",
-    combination_type="ties",      # also: "linear", "cat", "svd", "dare_linear", "dare_ties"
+    combination_type="ties",      # also: "linear", "cat", "svd", "dare_linear", "dare_ties", "ties_svd", "dare_linear_svd", "dare_ties_svd", "magnitude_prune", "magnitude_prune_svd"
     density=0.5,                  # TIES/DARE only: keep fraction
 )
 model.set_adapter("combined")

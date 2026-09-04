@@ -212,7 +212,7 @@ How you split docs determines what the retriever can see. Bad chunking caps syst
 | OpenAI `text-embedding-3-large`    | 3072* | API; supports Matryoshka truncation              |
 | OpenAI `text-embedding-3-small`    | 1536* | Cheaper, surprisingly strong                     |
 | Cohere `embed-v3`                  | 1024  | Multilingual; compressed-int8 mode               |
-| Voyage `voyage-3` / `voyage-code-2`| 1024  | Strong on retrieval; code-specialized variant    |
+| Voyage `voyage-3.5` / `voyage-code-3` | 1024 (256/512/2048 via Matryoshka) | Strong on retrieval; code-specialized variant; voyage-4 series is newest |
 
 *OpenAI v3 supports the `dimensions` parameter — truncate on read with little quality loss.
 
@@ -278,7 +278,7 @@ overall document for the purposes of improving search retrieval.
 Answer only with the succinct context and nothing else.
 ```
 
-Anthropic reported ~35% reduction in retrieval failures with this + hybrid + reranking. Cost: one cheap LLM call per chunk at index time (use prompt caching to keep it under control).
+Anthropic reported a 49% reduction in retrieval failures combining contextual embeddings with contextual BM25 (35% from contextual embeddings alone), rising to a 67% reduction when reranking is added. Cost: one cheap LLM call per chunk at index time (use prompt caching to keep it under control).
 
 ### Multi-vector / late-interaction (ColBERT)
 
@@ -491,7 +491,7 @@ Both LangChain and LlamaIndex churn rapidly — pin versions and verify the tuto
 - Khattab & Zaharia, *ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction over BERT* (2020): https://arxiv.org/abs/2004.12832
 - Anthropic, *Introducing Contextual Retrieval* (2024): https://www.anthropic.com/news/contextual-retrieval
 - LlamaIndex: https://github.com/run-llama/llama_index
-- LangChain RAG tutorial: https://python.langchain.com/docs/tutorials/rag/
+- LangChain RAG tutorial: https://docs.langchain.com/oss/python/langchain/rag
 - Ragas (RAG evaluation): https://github.com/explodinggradients/ragas
 - FAISS (Facebook AI Similarity Search): https://github.com/facebookresearch/faiss
 - MTEB Leaderboard (embedding benchmark): https://huggingface.co/spaces/mteb/leaderboard

@@ -290,18 +290,25 @@ Two regimes (Huyen ch. 4):
 
 ```python
 # Ragas — RAG faithfulness + answer relevance.
-# pip install ragas
-from ragas import evaluate
-from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
-from datasets import Dataset
+# pip install ragas  (>=0.2; snippet tested against 0.4.3)
+from ragas import evaluate, EvaluationDataset
+from ragas.metrics import Faithfulness, ResponseRelevancy, LLMContextPrecisionWithReference, LLMContextRecall
+from ragas.llms import LangchainLLMWrapper
 
-ds = Dataset.from_dict({
-    "question":     ["What is the warranty period for product X?"],
-    "answer":       ["Product X has a 2-year warranty."],
-    "contexts":     [["Our flagship product X comes with a 2-year limited warranty."]],
-    "ground_truth": ["The warranty for product X is 2 years."],
-})
-result = evaluate(ds, metrics=[faithfulness, answer_relevancy, context_precision, context_recall])
+# Metrics are classes (instantiate them); keys were renamed in 0.2:
+# question->user_input, answer->response, contexts->retrieved_contexts, ground_truth->reference.
+evaluation_dataset = EvaluationDataset.from_list([{
+    "user_input":         "What is the warranty period for product X?",
+    "retrieved_contexts": ["Our flagship product X comes with a 2-year limited warranty."],
+    "response":           "Product X has a 2-year warranty.",
+    "reference":          "The warranty for product X is 2 years.",
+}])
+evaluator_llm = LangchainLLMWrapper(llm)  # wrap any LangChain chat model; an explicit judge LLM is now required
+result = evaluate(
+    dataset=evaluation_dataset,
+    metrics=[Faithfulness(), ResponseRelevancy(), LLMContextPrecisionWithReference(), LLMContextRecall()],
+    llm=evaluator_llm,
+)
 print(result)   # {'faithfulness': 1.0, 'answer_relevancy': 0.92, ...}
 ```
 
@@ -558,7 +565,7 @@ def my_eval():
 - Promptfoo: https://github.com/promptfoo/promptfoo
 - Ragas: https://github.com/explodinggradients/ragas
 - DeepEval: https://github.com/confident-ai/deepeval
-- Chatbot Arena leaderboard: https://huggingface.co/spaces/lmsys/chatbot-arena-leaderboard
+- Chatbot Arena (LMArena) leaderboard: https://lmarena.ai/leaderboard (LMSYS rebranded to LMArena; HF mirror: https://huggingface.co/spaces/lmarena-ai/chatbot-arena-leaderboard)
 
 ### Papers
 

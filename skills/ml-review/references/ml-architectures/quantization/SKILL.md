@@ -82,7 +82,29 @@ model.save_pretrained("Llama-3.1-70B-GPTQ-4bit")
 
 Identifies and preserves "salient" weights (those corresponding to large activations) by scaling them up before quantization, then scaling activations down to compensate.
 
+> **Deprecation note:** AutoAWQ (`from awq import ...`, reference #9) was archived and officially deprecated on 2025-05-11 and is no longer maintained. For new AWQ quantization, use [llm-compressor](https://github.com/vllm-project/llm-compressor) (reference #8) with an AWQ scheme, or MLX-LM on Mac. The AWQ *format* is still fully supported for serving in vLLM -- only the quantizing library is dead.
+
 ```python
+# Preferred: AWQ quantization with llm-compressor
+from llmcompressor.modifiers.quantization import QuantizationModifier
+from llmcompressor import oneshot
+
+recipe = QuantizationModifier(
+    targets="Linear",
+    scheme="AWQ",            # activation-aware 4-bit weights
+    ignore=["lm_head"],
+)
+
+oneshot(
+    model="meta-llama/Llama-3.1-70B",
+    recipe=recipe,
+    output_dir="Llama-3.1-70B-AWQ",
+    num_calibration_samples=512,
+)
+```
+
+```python
+# Legacy (deprecated): AutoAWQ -- no longer maintained
 from awq import AutoAWQForCausalLM
 from transformers import AutoTokenizer
 
@@ -181,7 +203,7 @@ oneshot(
 - Near-lossless (<0.1 perplexity increase)
 - 2x memory reduction vs FP16
 - Hardware tensor core acceleration (no software dequant overhead)
-- Requires Hopper (H100/H200) or Ada (L4/RTX 4090) architecture
+- Requires Hopper (H100/H200), Ada (L4/RTX 4090), or Blackwell (B100/B200/GB200, RTX 50-series) architecture; Blackwell additionally adds native FP4/NVFP4 support
 
 ### INT8 (LLM.int8())
 
@@ -250,7 +272,7 @@ K-quant variants (K_S, K_M, K_L) allocate more bits to important layers (attenti
 
 **Decision flow:**
 1. **Fine-tuning?** → bitsandbytes NF4 + QLoRA
-2. **GPU serving on Hopper?** → FP8 (best quality/speed)
+2. **GPU serving on Hopper/Blackwell?** → FP8 (best quality/speed)
 3. **GPU serving on Ampere/older?** → AWQ 4-bit (vLLM) or GPTQ
 4. **CPU/laptop/edge?** → GGUF Q4_K_M (balance) or Q5_K_M (quality)
 5. **Maximum compression?** → GPTQ 3-bit or GGUF Q3_K_M
@@ -362,8 +384,8 @@ ollama run llama3.1:70b-instruct-q4_K_M
 3. [QLoRA Paper -- Efficient Finetuning of Quantized LLMs](https://arxiv.org/abs/2305.14314)
 4. [bitsandbytes GitHub](https://github.com/bitsandbytes-foundation/bitsandbytes)
 5. [LLM.int8() Paper -- 8-bit Matrix Multiplication for Transformers at Scale](https://arxiv.org/abs/2208.07339)
-6. [GGUF Format Specification](https://github.com/ggerganov/ggml/blob/master/docs/gguf.md)
+6. [GGUF Format Specification](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md)
 7. [vLLM Quantization Docs](https://docs.vllm.ai/en/stable/quantization/index.html)
 8. [llm-compressor (FP8)](https://github.com/vllm-project/llm-compressor)
-9. [AutoAWQ GitHub](https://github.com/casper-hansen/AutoAWQ)
-10. [Unsloth 4-bit Loading](https://docs.unsloth.ai/get-started/all-our-models)
+9. [AutoAWQ GitHub](https://github.com/casper-hansen/AutoAWQ) (archived/deprecated 2025-05-11 -- use llm-compressor, reference #8)
+10. [Unsloth Model Catalog](https://unsloth.ai/docs/get-started/unsloth-model-catalog)

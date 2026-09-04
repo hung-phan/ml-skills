@@ -288,7 +288,10 @@ fig.to_html(full_html=False)  # returns HTML string (div only, for embedding)
 
 ### Static Images
 ```python
-# Requires kaleido: pip install -U kaleido
+# Requires kaleido>=1.0 and plotly>=6.1.1; kaleido v1 no longer bundles Chrome.
+#   pip install --upgrade kaleido
+#   plotly_get_chrome      # or from Python: import plotly.io as pio; pio.get_chrome()
+# (legacy kaleido 0.2.x bundled Chrome but is EOL)
 fig.write_image("plot.png", width=1200, height=600, scale=2)  # 2x for retina
 fig.write_image("plot.svg")   # vector
 fig.write_image("plot.pdf")   # vector

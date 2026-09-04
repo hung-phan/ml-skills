@@ -80,14 +80,15 @@ Supported formats (zero code changes — specify at load time):
 | AWQ | W4A16 | Activation-aware weight quantization |
 | INT8 | W8A8 | SmoothQuant-style |
 | GGUF | Mixed | llama.cpp format |
-| NVFP4 | W4A8 | NVIDIA Blackwell native |
+| NVFP4 | W4A4 | NVIDIA Blackwell native (FP8 per-block scales) |
 | MXFP8/MXFP4 | Mixed | Microscaling formats |
 | BitsAndBytes | 4/8-bit | QLoRA-compatible |
 
 ### 7. Structured Outputs (Guided Decoding)
 
 Constrain generation to valid JSON schemas, regex patterns, or grammars using
-xgrammar backend. Guarantees well-formed output without post-processing.
+the structured-outputs engine (default backend `auto`, which selects xgrammar or
+guidance/llguidance as appropriate). Guarantees well-formed output without post-processing.
 
 ### 8. Multi-LoRA Serving
 
@@ -212,6 +213,7 @@ asyncio.run(main())
 
 ```python
 from vllm import LLM, SamplingParams
+from vllm.sampling_params import StructuredOutputsParams
 import json
 
 llm = LLM(model="Qwen/Qwen2.5-7B-Instruct")
@@ -229,9 +231,7 @@ schema = {
 params = SamplingParams(
     temperature=0.7,
     max_tokens=256,
-    guided_decoding={
-        "json": schema,  # Guarantees valid JSON matching schema
-    },
+    structured_outputs=StructuredOutputsParams(json=schema),  # Guarantees valid JSON matching schema
 )
 
 outputs = llm.generate(["Generate a person profile:"], params)
@@ -244,11 +244,14 @@ result = json.loads(outputs[0].outputs[0].text)
 ```python
 params = SamplingParams(
     max_tokens=32,
-    guided_decoding={
-        "regex": r"\d{3}-\d{2}-\d{4}",  # US SSN format
-    },
+    structured_outputs=StructuredOutputsParams(regex=r"\d{3}-\d{2}-\d{4}"),  # US SSN format
 )
 ```
+
+> **Migration (vLLM ≥ 0.12)**: the old `guided_decoding=` field was removed from
+> `SamplingParams`. Use `structured_outputs=StructuredOutputsParams(...)` instead:
+> `guided_json` → `structured_outputs.json`, `guided_regex` → `structured_outputs.regex`,
+> `guided_choice` → `structured_outputs.choice`, `guided_grammar` → `structured_outputs.grammar`.
 
 ### Multi-LoRA Serving
 
@@ -276,14 +279,14 @@ response = client.chat.completions.create(
 ```bash
 # Use smaller draft model for faster generation
 vllm serve meta-llama/Llama-3.1-70B-Instruct \
-    --speculative-model meta-llama/Llama-3.1-8B-Instruct \
-    --num-speculative-tokens 5 \
-    --speculative-disable-mqa-scorer
+    --speculative-config '{"method":"draft_model","model":"meta-llama/Llama-3.1-8B-Instruct","num_speculative_tokens":5}'
 
 # Or use n-gram speculation (no extra model needed)
 vllm serve meta-llama/Llama-3.1-8B-Instruct \
-    --speculative-model "[ngram]" \
-    --ngram-prompt-lookup-max 4
+    --speculative-config '{"method":"ngram","num_speculative_tokens":4,"prompt_lookup_min":2,"prompt_lookup_max":5}'
+
+# All speculative options are consolidated into --speculative-config (alias -sc).
+# --spec-tokens is the standalone shorthand for num_speculative_tokens.
 ```
 
 ## Performance Tuning
@@ -292,11 +295,11 @@ vllm serve meta-llama/Llama-3.1-8B-Instruct \
 
 | Parameter | Default | Purpose | Guidance |
 |-----------|---------|---------|----------|
-| `gpu_memory_utilization` | 0.90 | Fraction of GPU memory for KV cache | Increase to 0.95 for throughput; lower if OOM |
+| `gpu_memory_utilization` | 0.92 | Fraction of GPU memory for KV cache | Increase to 0.95 for throughput; lower if OOM |
 | `max_model_len` | Auto | Maximum sequence length | Set explicitly to avoid over-allocation |
 | `tensor_parallel_size` | 1 | GPUs for tensor parallelism | Use when model doesn't fit 1 GPU |
 | `enforce_eager` | False | Disable CUDA graphs | Set True for debugging; False for production (2-3× decode speedup) |
-| `max_num_seqs` | 256 | Max concurrent sequences | Increase for throughput; decrease for latency |
+| `max_num_seqs` | Auto (context/hardware-dependent: 256 on smaller GPUs, 1024 on H100/H200/B200) | Max concurrent sequences | Increase for throughput; decrease for latency |
 | `enable_chunked_prefill` | True (v1) | Interleave prefill/decode | Reduces TTFT variance under load |
 | `enable_prefix_caching` | True (v1) | Cache common prefixes | Always enable for shared system prompts |
 | `quantization` | None | Weight quantization method | "fp8", "awq", "gptq", "gguf" |
@@ -425,7 +428,6 @@ vllm serve meta-llama/Llama-3.1-8B-Instruct \
     --gpu-memory-utilization 0.92 \
     --max-model-len 32768 \
     --enable-prefix-caching \
-    --disable-log-requests \          # Reduce log noise
     --max-num-seqs 512 \              # Higher concurrency
     --api-key $VLLM_API_KEY \         # Auth
     --uvicorn-log-level warning \
@@ -440,7 +442,7 @@ vllm serve meta-llama/Llama-3.1-8B-Instruct \
 | OpenAI API drop-in replacement | ✅ Yes | Full compatibility, streaming, tool calling |
 | Multi-LoRA serving | ✅ Yes | Dynamic adapter routing per request |
 | Offline batch processing | ✅ Yes | LLM class with auto-batching |
-| Structured output / JSON | ✅ Yes | xgrammar guided decoding |
+| Structured output / JSON | ✅ Yes | Structured outputs (auto backend: xgrammar/guidance) |
 | Multi-modal (vision + text) | ✅ Yes | LLaVA, Qwen-VL, Pixtral, etc. |
 | Embedding / reward models | ✅ Yes | Pooling model support |
 | Edge / laptop deployment | ❌ No | Use Ollama or llama.cpp |
@@ -458,7 +460,7 @@ vllm serve meta-llama/Llama-3.1-8B-Instruct \
 | **Quantization** | FP8/AWQ/GPTQ/INT8/GGUF/NVFP4 | AWQ/GPTQ/BnB | FP8/INT8/INT4 | AWQ/FP8 | GGUF only |
 | **Multi-LoRA** | ✅ Native | ✅ | ❌ | ✅ | ❌ |
 | **Speculative decode** | ✅ Multiple methods | ✅ | ✅ | ✅ | ❌ |
-| **Structured output** | ✅ (xgrammar) | ✅ (outlines) | ❌ | ✅ (native) | ❌ |
+| **Structured output** | ✅ (auto: xgrammar/guidance) | ✅ (outlines) | ❌ | ✅ (native) | ❌ |
 | **OpenAI API** | ✅ Full | ✅ Partial | ❌ | ✅ Full | ✅ Partial |
 | **Multi-node TP** | ✅ (Ray) | ❌ | ✅ | ✅ | ❌ |
 | **Hardware** | NVIDIA/AMD/TPU/CPU/Ascend | NVIDIA/AMD | NVIDIA only | NVIDIA/AMD | CPU/NVIDIA (GGUF) |
@@ -512,5 +514,5 @@ uv pip install vllm --extra-index-url https://wheels.vllm.ai/rocm/
 uv pip install vllm-tpu
 ```
 
-Requires: Linux, Python 3.10–3.13, NVIDIA GPU (Ampere+), CUDA 12.x.
+Requires: Linux, Python 3.10–3.14, NVIDIA GPU (Ampere+), CUDA 12.x.
 Also supports: AMD ROCm 7.0, Google TPU, Intel Gaudi, Apple Silicon (via vLLM-Metal).

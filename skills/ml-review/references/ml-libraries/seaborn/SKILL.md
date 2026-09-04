@@ -24,7 +24,7 @@ Statistical data visualization built on matplotlib. Use when generating publicat
 # Figure-level -- creates its own figure, facets natively
 g = sns.relplot(data=df, x="x", y="y", col="category", kind="scatter")
 g.set_titles("{col_name}")
-g.fig.suptitle("Title", y=1.02)
+g.figure.suptitle("Title", y=1.02)
 
 # Axes-level -- draws into existing axes
 fig, axes = plt.subplots(1, 2, figsize=(10, 4))
@@ -247,12 +247,12 @@ import matplotlib.pyplot as plt
 
 # Modify figure-level plot after creation
 g = sns.catplot(data=df, x="day", y="total_bill", kind="box")
-g.fig.set_size_inches(8, 5)
+g.figure.set_size_inches(8, 5)
 g.set_titles("{col_name} meals")
 g.set_xlabels("Day of week")
 g.set_ylabels("Total bill ($)")
-g.fig.subplots_adjust(top=0.9)
-g.fig.suptitle("Spending by Day")
+g.figure.subplots_adjust(top=0.9)
+g.figure.suptitle("Spending by Day")
 
 # Access underlying axes
 for ax in g.axes.flat:
@@ -281,7 +281,7 @@ sns.relplot(data=df, x="x", y="y", height=5, aspect=1.5)
 
 # Or resize after
 g = sns.relplot(data=df, x="x", y="y")
-g.fig.set_size_inches(10, 6)
+g.figure.set_size_inches(10, 6)
 ```
 
 ### Legend placement

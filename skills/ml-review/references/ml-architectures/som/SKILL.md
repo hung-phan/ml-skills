@@ -90,6 +90,8 @@ som.pca_weights_init(data)
 # --- Train ---
 som.train(data, num_iteration=10000)       # online random
 # som.train_batch(data, num_iteration=500) # batch mode
+# Numba JIT (pip install minisom[fast]) — faster on large datasets:
+# som.train_batch_offline_fast(data, num_iteration=500)
 
 # --- Evaluate ---
 qe = som.quantization_error(data)  # lower = better
@@ -148,5 +150,5 @@ anomalies = data[np.array(distances) > threshold]
 ## References
 
 - [MiniSom](https://github.com/JustGlowing/minisom) — Lightweight Self-Organizing Map library for Python
-- [Kohonen's Self-Organizing Map (original paper, 1982)](https://ieeexplore.ieee.org/document/6726486) — Foundational SOM algorithm
-- [ESOM: Tools for Visualizing High-Dimensional Data (Ultsch, 2005)](https://www.uni-marburg.de/fb12/arbeitsgruppen/datenbionik/pdf/pubs/2005/ultsch05esom) — U-matrix and emergent SOM visualization
+- [Kohonen — Self-organized formation of topologically correct feature maps (original paper, 1982)](https://doi.org/10.1007/BF00337288) — Foundational SOM algorithm (Biological Cybernetics 43(1):59-69)
+- [ESOM: Tools for Visualizing High-Dimensional Data (Ultsch, 2005)](http://databionic-esom.sourceforge.net/) — U-matrix and emergent SOM visualization

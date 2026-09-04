@@ -638,7 +638,7 @@ Llama 3's pattern: AI generates an initial annotation, human reviews and correct
 
 | Tool | Strengths | Use when |
 |---|---|---|
-| **Argilla** | Built for LLM data; native HF Datasets integration; AI-assisted | SFT/preference curation in HF stack |
+| **Argilla** | Built for LLM data; native HF Datasets integration; AI-assisted (maintenance mode as of 2025 — bug fixes only, seeking new maintainers) | SFT/preference curation in HF stack (consider HF's integrated dataset-annotation tooling as the actively-developed alternative) |
 | **Label Studio** | General-purpose; rich UI types; self-hosted | Heterogeneous tasks (NER, classification, segmentation) |
 | **Prodigy** | Active learning out of the box; commercial | Small expert team, NLP focus |
 | **Lilac** | Dataset exploration + clustering for SFT data | Pre-annotation dataset auditing |
@@ -657,6 +657,8 @@ Without versioning you can't reproduce your training run, debug regressions, or 
 | **HuggingFace Datasets revisions** | HF Hub-hosted | Public or org-internal sharing |
 | **Weights & Biases artifacts** | Tied to experiments | Already using W&B for tracking |
 | **Custom + content hashing** | Anything | You need full control |
+
+Note: Treeverse (the lakeFS company) now stewards both DVC and lakeFS, so these are no longer fully independent projects.
 
 ```bash
 # DVC quickstart — version a dataset
@@ -720,7 +722,7 @@ Use these as starting points, ablation baselines, or augmentation. Always verify
 
 | Dataset | Size | License | Notes |
 |---|---|---|---|
-| **The Stack v2** | ~67TB / 658B tokens | Per-source (mostly permissive) | Filtered GitHub; the standard code-pretraining corpus |
+| **The Stack v2** | ~67.5TB / ~900B tokens (train-full) | Per-source (mostly permissive) | Filtered GitHub; the standard code-pretraining corpus; 32.1TB deduplicated variant available |
 | **CodeFeedback** | ~150K examples | Apache 2.0 | Code with execution feedback |
 | **Magicoder OSS-Instruct** | ~75K examples | MIT | OSS-Instruct seeded code data |
 
@@ -812,8 +814,8 @@ For RAG, see `../../ml-architectures/rag/` for indexing strategy and retrieval e
 - FLAN Collection — https://github.com/google-research/FLAN
 - Argilla — https://github.com/argilla-io/argilla
 - Label Studio — https://github.com/HumanSignal/label-studio
-- DVC — https://github.com/iterative/dvc
+- DVC — https://github.com/treeverse/dvc
 - datasketch (MinHash, LSH) — https://github.com/ekzhu/datasketch
-- Microsoft Presidio (PII) — https://github.com/microsoft/presidio
+- Presidio (data-privacy-stack) (PII) — https://github.com/data-privacy-stack/presidio
 - Textbooks Are All You Need (phi / synthetic data quality) — https://arxiv.org/abs/2306.11644
 - Databricks Dolly — https://github.com/databrickslabs/dolly

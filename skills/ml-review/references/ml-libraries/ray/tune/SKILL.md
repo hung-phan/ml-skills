@@ -60,7 +60,7 @@ print(best.config)  # best hyperparameters
 ```python
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
-from ray.train import Checkpoint
+from ray.tune import Checkpoint
 import tempfile, torch
 
 def train_mnist(config):
@@ -152,27 +152,33 @@ search_alg = HyperOptSearch(metric="loss", mode="min")
 
 ## Integration with Ray Train
 
+`Tuner(trainer)` is deprecated as of Ray 2.43 (and already removed under Train V2 / `RAY_TRAIN_V2_ENABLED=1`). Use a function-based driver that builds the `TorchTrainer` inside the trial and calls `trainer.fit()`; surface Train metrics to Tune with a `TuneReportCallback`.
+
 ```python
+from ray.train import ScalingConfig
 from ray.train.torch import TorchTrainer
 from ray import tune
 
-trainer = TorchTrainer(
-    train_func,
-    scaling_config=ScalingConfig(num_workers=2, use_gpu=True),
-)
+def train_driver_fn(config):
+    trainer = TorchTrainer(
+        train_func,
+        train_loop_config=config,
+        scaling_config=ScalingConfig(num_workers=2, use_gpu=True),
+    )
+    trainer.fit()
 
 tuner = tune.Tuner(
-    trainer,
+    train_driver_fn,
     param_space={
-        "train_loop_config": {
-            "lr": tune.loguniform(1e-5, 1e-2),
-            "batch_size": tune.choice([16, 32, 64]),
-        }
+        "lr": tune.loguniform(1e-5, 1e-2),
+        "batch_size": tune.choice([16, 32, 64]),
     },
     tune_config=tune.TuneConfig(metric="val_loss", mode="min", num_samples=20),
 )
 results = tuner.fit()
 ```
+
+See: https://docs.ray.io/en/latest/train/user-guides/hyperparameter-optimization.html
 
 ## Tips
 

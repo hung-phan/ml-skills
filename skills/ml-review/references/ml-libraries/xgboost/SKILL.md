@@ -31,10 +31,10 @@ Ensemble of sequentially-trained weak learners (decision trees) where each tree 
 |-----------|---------|----------|----------|
 | **Best for** | General default, wide compatibility | Large datasets (>100K rows), speed | Categorical-heavy data, minimal preprocessing |
 | **Tree growth** | Level-wise (balanced) | Leaf-wise (faster, deeper) | Symmetric (oblivious) trees |
-| **Categoricals** | Requires encoding | Supports native (`categorical_feature`) | Native ordered target statistics — no encoding needed |
+| **Categoricals** | Native since 1.6 (`enable_categorical=True`, `category` dtype) | Supports native (`categorical_feature`) | Native ordered target statistics — no encoding needed |
 | **Speed** | Moderate | Fastest (histogram + GOSS + EFB) | Moderate (ordered boosting overhead) |
 | **Overfitting risk** | Medium | Higher (leaf-wise) — tune `num_leaves` | Lowest (ordered boosting, built-in regularization) |
-| **GPU support** | Yes (`tree_method='gpu_hist'`) | Yes (`device='gpu'`) | Yes (`task_type='GPU'`) |
+| **GPU support** | Yes (`tree_method='hist', device='cuda'`) | Yes (`device='gpu'`) | Yes (`task_type='GPU'`) |
 | **Missing values** | Native handling | Native handling | Native handling |
 | **Ranking** | LambdaMART built-in | LambdaMART built-in | YetiRank built-in |
 
@@ -215,8 +215,8 @@ model.fit(X_train, y_train, eval_set=(X_val, y_val), verbose=100)
 ## 6 · GPU Training
 
 ```python
-# XGBoost — GPU histogram
-model = xgb.XGBClassifier(tree_method="gpu_hist", gpu_id=0)
+# XGBoost — GPU histogram (XGBoost 2.0+; `gpu_hist`/`gpu_id` removed)
+model = xgb.XGBClassifier(tree_method="hist", device="cuda")  # device="cuda:0" to pick an ordinal
 
 # LightGBM — GPU
 model = lgb.LGBMClassifier(device="gpu", gpu_use_dp=False)
@@ -232,7 +232,7 @@ model = cb.CatBoostClassifier(task_type="GPU", devices="0")
 | 50K–500K | GPU ~2–5× faster |
 | >500K | GPU ~5–20× faster |
 
-**CatBoost GPU** works out of the box with pip install. XGBoost/LightGBM GPU requires building from source or specific pip wheels with CUDA support.
+**CatBoost GPU** works out of the box with pip install. **XGBoost GPU** also works out of the box: `pip install xgboost` ships the full package with GPU/CUDA support on Linux by default (use `xgboost-cu12` if the driver only supports CUDA 12, or `xgboost-cpu` for a GPU-free build). **LightGBM GPU** still requires building from source or a special pip wheel with CUDA support.
 
 ---
 
@@ -242,7 +242,7 @@ model = cb.CatBoostClassifier(task_type="GPU", devices="0")
 |---------|---------|----------|----------|
 | Training speed (1M rows) | ~120s | ~45s | ~90s |
 | Memory efficiency | High | Highest (histogram) | Moderate |
-| Categorical handling | Manual encode | Native (limited) | Best (ordered TS) |
+| Categorical handling | Native since 1.6 (`enable_categorical=True`) | Native (limited) | Best (ordered TS) |
 | Default regularization | L1 + L2 | L1 + L2 | L2 + ordered boosting |
 | Distributed training | Dask, Spark, Ray | Dask, Spark, Ray | Spark (limited) |
 | Monotone constraints | ✅ | ✅ | ✅ |
@@ -263,6 +263,7 @@ model = cb.CatBoostClassifier(task_type="GPU", devices="0")
 - **Optuna + early stopping**: When using both, don't put `n_estimators` in search space. Fix it high and let early stopping decide.
 - **SHAP + CatBoost**: Use `shap.TreeExplainer(model)` directly — CatBoost has native SHAP support, no need for slow `KernelExplainer`.
 - **Categorical cardinality**: CatBoost handles high cardinality well. LightGBM's native categoricals degrade above ~1000 unique values — use target encoding instead.
+- **XGBoost categorical serialization**: Models trained with `enable_categorical=True` must be saved as JSON or UBJSON (`model.save_model("m.json")`) — the binary/pickle path does not preserve category metadata reliably.
 
 ---
 

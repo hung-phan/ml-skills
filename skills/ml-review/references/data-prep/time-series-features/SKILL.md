@@ -21,14 +21,14 @@ Before hand-engineering features, ask whether you should skip this skill entirel
 
 | Situation | Try first | Why |
 |-----------|-----------|-----|
-| Univariate forecasting, limited covariates, short history | **Chronos-Bolt** / **Chronos-2** (Oct 2025) or **TimesFM-2.0** zero-shot | SOTA on GIFT-Eval / fev-bench; no training, no feature engineering |
-| Tabular forecasting, want a 3-line baseline with no manual work | **`autogluon.timeseries`** (1.2, Nov 2024) | Ensembles statistical + GBM + GluonTS deep + Chronos-Bolt with auto lag/calendar features |
+| Univariate forecasting, limited covariates, short history | **Chronos-Bolt** / **Chronos-2** (Oct 2025) or **TimesFM-2.5** (Sep 2025, Apache-2.0) zero-shot | SOTA on GIFT-Eval / fev-bench; no training, no feature engineering |
+| Tabular forecasting, want a 3-line baseline with no manual work | **`autogluon.timeseries`** (1.6.x, 2025) | Ensembles statistical + GBM + GluonTS deep + Chronos-Bolt with auto lag/calendar features |
 | Many exogenous covariates, irregular event streams, latency/cost-bound, or non-forecasting task (TS-features-for-classification) | **Stay in this skill** | FMs underperform on multivariate/CTR/point-process; opaque feature importance |
 
 ```python
 # Chronos-Bolt zero-shot (no training)
-from chronos import ChronosPipeline
-pipe = ChronosPipeline.from_pretrained("amazon/chronos-bolt-base")
+from chronos import BaseChronosPipeline
+pipe = BaseChronosPipeline.from_pretrained("amazon/chronos-bolt-base")
 forecasts = pipe.predict(context=history_tensor, prediction_length=28)
 
 # AutoGluon-TS one-liner
@@ -38,6 +38,8 @@ predictions = predictor.predict(train_data)
 ```
 
 **Decision rule**: try a foundation model in 30 minutes; if the zero-shot accuracy beats your business floor, you're done. If covariates dominate or the use case isn't pure forecasting, the rest of this skill applies. Foundation-model coverage is also why per-event recsys / CTR features remain in scope here — no FM currently handles point processes.
+
+**Note on TimesFM versions**: TimesFM-3.0 (Aug 2026) exists but ships under a non-commercial license, so **TimesFM-2.5** (Apache-2.0) remains the default for commercial use.
 
 References: https://github.com/amazon-science/chronos-forecasting · https://github.com/google-research/timesfm · https://auto.gluon.ai/stable/tutorials/timeseries/index.html · https://arxiv.org/abs/2410.10393 (GIFT-Eval benchmark).
 
@@ -299,7 +301,7 @@ for fold, (tr, va) in enumerate(tscv.split(X)):
 
 | Need | Use |
 |------|-----|
-| Univariate forecasting zero-shot (limited covariates) | Chronos-Bolt / Chronos-2 / TimesFM-2.0 — see §0 |
+| Univariate forecasting zero-shot (limited covariates) | Chronos-Bolt / Chronos-2 / TimesFM-2.5 — see §0 |
 | Tabular AutoML baseline with no manual work | `autogluon.timeseries` — see §0 |
 | Forecasting tabular sales/demand with XGBoost/LightGBM | This skill (lags + windows + calendar + time-aware CV) |
 | Self-supervised embeddings as features (lots of unlabeled series) | TS2Vec / T-Rep — https://github.com/zhihanyue/ts2vec, https://github.com/let-it-care/t-rep |

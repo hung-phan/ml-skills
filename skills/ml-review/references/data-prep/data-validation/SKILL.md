@@ -28,11 +28,13 @@ Without validation gates, you discover these problems via model performance deca
 
 **Docs**: https://pandera.readthedocs.io
 
+**Note**: Since Pandera 0.24.0, importing schema primitives from the top-level `pandera` module emits a `FutureWarning` (removal planned for 0.29.0). Use the `pandera.pandas` namespace for pandas DataFrames.
+
 ### Schema Definition
 
 ```python
-import pandera as pa
-from pandera import Column, Check, Index
+import pandera.pandas as pa
+from pandera.pandas import Column, Check, Index
 
 schema = pa.DataFrameSchema(
     columns={
@@ -52,7 +54,7 @@ validated_df = schema.validate(df, lazy=True)  # lazy=True collects ALL errors
 ### Decorator Style (Class-based)
 
 ```python
-from pandera import DataFrameModel, Field
+from pandera.pandas import DataFrameModel, Field
 from pandera.typing import Series
 
 class FeatureSchema(DataFrameModel):
@@ -76,7 +78,7 @@ def transform_features(df: pd.DataFrame) -> pd.DataFrame:
 ### Hypothesis Testing
 
 ```python
-from pandera import Hypothesis
+from pandera.pandas import Hypothesis
 
 schema = pa.DataFrameSchema({
     "revenue": Column(float, [
@@ -93,7 +95,7 @@ schema = pa.DataFrameSchema({
 | Gotcha | Fix |
 |--------|-----|
 | `lazy=False` (default) raises on FIRST error only | Always use `lazy=True` in pipelines |
-| Polars support is experimental | Use `pandera.polars` explicitly, check version |
+| Polars backend is less mature than pandas (GA since 0.19.0; data-synthesis strategies not yet supported) | Use `pandera.polars` explicitly, check version |
 | `coerce=True` silently converts — may mask bugs | Set `strict=True` + explicit coercion in ETL |
 | Large DataFrames: validation is O(n) per check | Sample for statistical checks, full scan for schema |
 
@@ -118,43 +120,42 @@ schema = pa.DataFrameSchema({
 
 ```python
 import great_expectations as gx
+import great_expectations.expectations as gxe
 
 context = gx.get_context()  # or gx.get_context(project_root_dir="./gx")
 
 # Connect to data (GX 1.x API uses data_sources)
 datasource = context.data_sources.add_pandas("my_source")
 asset = datasource.add_dataframe_asset("training_features")
-batch_request = asset.build_batch_request(dataframe=df)
+batch_def = asset.add_batch_definition_whole_dataframe("bd")
 
-# Create expectations
-validator = context.get_validator(batch_request=batch_request)
-validator.expect_column_values_to_not_be_null("user_id")
-validator.expect_column_values_to_be_between("age", min_value=0, max_value=120)
-validator.expect_column_mean_to_be_between("score", min_value=0.3, max_value=0.7)
-validator.expect_column_proportion_of_unique_values_to_be_between("user_id", min_value=0.95)
-validator.save_expectation_suite()
-
-# Run checkpoint
-checkpoint = context.add_or_update_checkpoint(
-    name="training_data_check",
-    validations=[{"batch_request": batch_request, "expectation_suite_name": "my_suite"}],
+# Build an expectation suite and add expectations
+suite = context.suites.add(gx.ExpectationSuite(name="my_suite"))
+suite.add_expectation(gxe.ExpectColumnValuesToNotBeNull(column="user_id"))
+suite.add_expectation(gxe.ExpectColumnValuesToBeBetween(column="age", min_value=0, max_value=120))
+suite.add_expectation(gxe.ExpectColumnMeanToBeBetween(column="score", min_value=0.3, max_value=0.7))
+suite.add_expectation(
+    gxe.ExpectColumnProportionOfUniqueValuesToBeBetween(column="user_id", min_value=0.95)
 )
-result = checkpoint.run()
+
+# Bind the batch definition to the suite, then run a checkpoint
+vd = context.validation_definitions.add(
+    gx.ValidationDefinition(name="vd", data=batch_def, suite=suite)
+)
+checkpoint = context.checkpoints.add(
+    gx.Checkpoint(name="training_data_check", validation_definitions=[vd])
+)
+result = checkpoint.run(batch_parameters={"dataframe": df})
 assert result.success
 ```
 
 ### Profiler (Auto-generate expectations from reference data)
 
-> **Note**: `UserConfigurableProfiler` was removed in GX 1.0. Use the
-> `DataAssistant` API or manually define expectations based on the reference data.
-
-```python
-# GX 1.x: Use onboarding data assistant for auto-profiling
-data_assistant_result = context.assistants.onboarding.run(
-    batch_request=batch_request,
-)
-suite = data_assistant_result.get_expectation_suite(expectation_suite_name="auto_generated")
-```
+> **Note**: Auto-profiling was removed in GX 1.0 — both `UserConfigurableProfiler`
+> and the `DataAssistant` / `context.assistants` API no longer exist (profilers are
+> slated to return in a later 1.x release). For now, manually define expectations with
+> `context.suites.add(...)` + `suite.add_expectation(...)` (see the Quickstart above),
+> or compute reference statistics yourself and encode them as expectations.
 
 ### Gotchas
 

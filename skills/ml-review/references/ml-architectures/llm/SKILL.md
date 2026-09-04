@@ -187,9 +187,12 @@ tok.vocab_size  # 32000
 | Tokenizer | Algorithm | Vocab Size | Used By |
 |-----------|-----------|-----------|---------|
 | GPT-2 BPE | Byte-level BPE | 50,257 | GPT-2/3 |
-| tiktoken (cl100k) | BPE | 100,256 | GPT-4, Claude |
+| tiktoken (cl100k) | BPE | 100,256 | GPT-3.5, original GPT-4 |
+| tiktoken (o200k) | BPE | ~200,000 | GPT-4o, GPT-4.1, o-series |
 | SentencePiece | Unigram/BPE | 32,000 | LLaMA, T5 |
 | Mistral tokenizer | BPE | 32,768 | Mistral |
+
+> Claude does not use tiktoken — Anthropic uses its own proprietary tokenizer (token counts are exposed via the `/v1/messages/count_tokens` endpoint), and newer Claude models use a different, newer tokenizer.
 
 ---
 
@@ -362,7 +365,9 @@ trainer.train()
 SFT → Reward Model → PPO optimization. More complex but more flexible.
 
 ```python
-from trl import PPOTrainer, PPOConfig, AutoModelForCausalLMWithValueHead
+# PPO moved under trl.experimental.ppo in recent TRL (>= 0.9).
+from trl.experimental.ppo import PPOTrainer, PPOConfig, AutoModelForCausalLMWithValueHead
+from transformers import AutoModelForCausalLM, AutoModelForSequenceClassification, AutoTokenizer
 
 # 1. SFT model (already fine-tuned on instructions)
 # 2. Reward model (trained on preference data)
@@ -370,11 +375,28 @@ from trl import PPOTrainer, PPOConfig, AutoModelForCausalLMWithValueHead
 ppo_config = PPOConfig(
     batch_size=16,
     learning_rate=1e-5,
-    ppo_epochs=4,
-    mini_batch_size=4,
+    num_ppo_epochs=4,     # renamed from ppo_epochs (default 4)
+    num_mini_batches=4,   # replaces mini_batch_size / batch_size split
 )
-model = AutoModelForCausalLMWithValueHead.from_pretrained("sft-model")
-# Training loop: generate -> score with reward model -> PPO update
+
+tokenizer = AutoTokenizer.from_pretrained("sft-model")
+policy = AutoModelForCausalLMWithValueHead.from_pretrained("sft-model")
+ref_model = AutoModelForCausalLM.from_pretrained("sft-model")
+reward_model = AutoModelForSequenceClassification.from_pretrained("reward-model", num_labels=1)
+value_model = AutoModelForSequenceClassification.from_pretrained("reward-model", num_labels=1)
+
+# PPOTrainer now requires explicit reward/value models + dataset; the old
+# manual generate -> score -> step loop was removed in favor of .train().
+trainer = PPOTrainer(
+    args=ppo_config,
+    processing_class=tokenizer,
+    model=policy,
+    ref_model=ref_model,
+    reward_model=reward_model,
+    value_model=value_model,
+    train_dataset=dataset,
+)
+trainer.train()
 ```
 
 ### GRPO (Group Relative Policy Optimization)
@@ -415,9 +437,13 @@ from vllm import LLM, SamplingParams
 
 llm = LLM(
     model="meta-llama/Llama-2-70b-hf",
-    speculative_model="meta-llama/Llama-2-7b-hf",  # draft
-    num_speculative_tokens=5,  # propose 5 tokens per step
-    tensor_parallel_size=4
+    # Draft config is now a single dict; the top-level speculative_model /
+    # num_speculative_tokens args were removed from LLM()/EngineArgs.
+    speculative_config={
+        "model": "meta-llama/Llama-2-7b-hf",  # draft
+        "num_speculative_tokens": 5,          # propose 5 tokens per step
+    },
+    tensor_parallel_size=4,
 )
 # Achieves 2-3x speedup with identical output quality
 ```

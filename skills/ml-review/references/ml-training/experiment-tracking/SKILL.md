@@ -24,7 +24,7 @@ Experiment tracking solves this by recording every run's parameters, metrics, ar
 |---------|---------|
 | **Experiment** | Named group of runs (e.g., "bert-finetuning-v2") |
 | **Run** | Single training execution with params, metrics, artifacts |
-| **Model Registry** | Central store for versioned models with stage transitions |
+| **Model Registry** | Central store for versioned models with aliases and tags |
 | **Artifact** | Any file logged with a run (checkpoints, plots, data samples) |
 
 ### Tracking API
@@ -82,22 +82,30 @@ mlflow.xgboost.autolog()
 
 ### Model Registry
 
+> Model version **stages** and `transition_model_version_stage` are **deprecated since MLflow 2.9.0** and will be removed in a future major release. Use **aliases** (e.g. `@champion`) plus **tags** for the model lifecycle instead.
+
 ```python
 # Register model from a run
 model_uri = f"runs:/{run_id}/model"
 mv = mlflow.register_model(model_uri, "sentiment-bert")
 
-# Transition stages
+# Assign an alias + tags (aliases/tags replace the deprecated stages)
 from mlflow import MlflowClient
 client = MlflowClient()
-client.transition_model_version_stage(
+client.set_registered_model_alias(
+    name="sentiment-bert",
+    alias="champion",       # e.g. @champion / @challenger instead of a stage
+    version=mv.version,
+)
+client.set_model_version_tag(
     name="sentiment-bert",
     version=mv.version,
-    stage="Production",  # None | Staging | Production | Archived
+    key="validation_status",
+    value="approved",
 )
 
-# Load production model
-model = mlflow.pyfunc.load_model("models:/sentiment-bert/Production")
+# Load the champion model by alias
+model = mlflow.pyfunc.load_model("models:/sentiment-bert@champion")
 
 # Compare model versions
 runs = mlflow.search_runs(
@@ -124,14 +132,14 @@ mlflow server \
 
 ## Trackio (HF-native)
 
-[Trackio](https://huggingface.co/docs/trackio) is Hugging Face's lightweight, open-source experiment tracker, designed to drop into the Transformers `Trainer` and every TRL trainer with zero glue code. Unlike MLflow/W&B/Neptune, Trackio runs as a public Hugging Face Space backed by a dataset repo, so the dashboard URL is shareable by default and there's no separate server to host.
+[Trackio](https://huggingface.co/docs/trackio) is Hugging Face's lightweight, open-source experiment tracker, designed to drop into the Transformers `Trainer` and every TRL trainer with zero glue code. Unlike MLflow/W&B/Neptune, Trackio runs as a public Hugging Face Space backed by a Hugging Face Bucket (`bucket_id` / `TRACKIO_BUCKET_ID`) — dataset-repo backing (`dataset_id` / `TRACKIO_DATASET_ID`) is deprecated and being removed — so the dashboard URL is shareable by default and no separate server is required (self-hosting via `server_url` / `TRACKIO_SERVER_URL` is optional).
 
 Reach for Trackio when:
 - Your training already runs on Hugging Face Jobs (see [`../hf-jobs-workflow/`](../hf-jobs-workflow/)) — it's the path of least resistance and the dashboard Space is auto-created.
 - You want a public, link-shareable run dashboard without paying for a SaaS tier.
 - You want **alerts** (programmatic decision points emitted *during* training) you can read back between runs to drive the next sweep.
 
-Reach for W&B / MLflow / Neptune when you need self-hosting, model registry stages, or the broader analytics features Trackio doesn't yet match.
+Reach for W&B / MLflow / Neptune when you need a full model registry lifecycle (aliases/tags, staged promotion), or the broader analytics features Trackio doesn't yet match.
 
 ### Wire it in
 
@@ -144,10 +152,11 @@ config = SFTConfig(
     run_name="sft_qwen3-4b_lr2e-5_bs128",              # group by descriptive name
     project="qwen3-instruction-tuning",                # keeps related runs grouped
     trackio_space_id="myuser/ml-skills-train-runs",    # public dashboard Space
+    trackio_bucket_id="myuser/ml-skills-train-runs",   # HF Bucket store (replaces deprecated dataset repo)
 )
 ```
 
-`project` and `trackio_space_id` can also be set via `TRACKIO_PROJECT` / `TRACKIO_SPACE_ID` env vars — useful when the same script is reused across sweeps.
+`project`, `trackio_space_id`, and `trackio_bucket_id` can also be set via `TRACKIO_PROJECT` / `TRACKIO_SPACE_ID` / `TRACKIO_BUCKET_ID` env vars — useful when the same script is reused across sweeps.
 
 For the surrounding operational config a real HF Jobs run also needs (`push_to_hub`, `hub_model_id`, `disable_tqdm`, `logging_first_step`, `hub_strategy`, timeout), see [`../hf-jobs-workflow/`](../hf-jobs-workflow/) — that's the canonical home for cloud-job training discipline.
 
@@ -476,8 +485,8 @@ with mlflow.start_run(run_name="optuna-sweep"):
 | Feature | MLflow | Weights & Biases | Neptune | Trackio | TensorBoard |
 |---------|--------|-----------------|---------|---------|-------------|
 | **Hosting** | Self-hosted or Databricks | Cloud (SaaS) | Cloud (SaaS) | Hugging Face Space (public by default) | Local / TensorBoard.dev |
-| **Pricing** | Free (OSS) | Free tier (100GB), Team $50/user/mo | Free tier, Team $79/user/mo | Free (OSS, runs on free HF Space tier) | Free |
-| **Model Registry** | ✅ Built-in (stages) | ✅ (Model Registry) | ✅ (Model Registry) | ❌ (use the Hub directly) | ❌ |
+| **Pricing** | Free (OSS) | Free (5 GB storage); Pro from ~$60/mo (100 GB); Enterprise custom | ⚠️ Legacy/uncertain — acquired by OpenAI (2025); [site now redirects](https://openai.com/index/openai-to-acquire-neptune/), pricing defunct | Free (OSS, runs on free HF Space tier) | Free |
+| **Model Registry** | ✅ Built-in (aliases + tags) | ✅ (Model Registry) | ✅ (Model Registry) | ❌ (use the Hub directly) | ❌ |
 | **Autolog** | ✅ sklearn, pytorch, tf, xgb, transformers | ✅ via integrations | ✅ via integrations | ✅ Transformers Trainer + all TRL trainers | ❌ Manual only |
 | **HPO Sweeps** | ❌ (use Optuna/Ray Tune) | ✅ Built-in Bayesian | ❌ (use Optuna) | ❌ alert-driven via `trackio.alert` | ❌ |
 | **Dataset Versioning** | ✅ (Artifacts) | ✅ (Artifacts) | ✅ (Artifacts) | ❌ (use HF Datasets) | ❌ |
@@ -493,7 +502,7 @@ with mlflow.start_run(run_name="optuna-sweep"):
 
 - **MLflow**: You need self-hosting, Databricks integration, or a production model registry with CI/CD
 - **W&B**: You want the best experiment comparison UI, built-in sweeps, and team collaboration
-- **Neptune**: Enterprise teams needing granular access control and structured metadata
+- **Neptune**: ⚠️ Acquired by OpenAI (late 2025) — the public site now [redirects to the acquisition announcement](https://openai.com/index/openai-to-acquire-neptune/) and continued standalone availability is uncertain; formerly for enterprise teams needing granular access control and structured metadata
 - **Trackio**: Training already on Hugging Face (Jobs / TRL); want a public, free, link-shareable dashboard with `trackio.alert` decision points
 - **TensorBoard**: Quick local debugging, don't need persistence or collaboration
 
@@ -581,11 +590,11 @@ mlflow.log_artifact("config.yaml")
 ## Gotchas
 
 1. **MLflow artifact storage grows fast** — Set up artifact garbage collection or use S3 lifecycle policies
-2. **W&B free tier has 100GB limit** — Use `wandb.log()` selectively for large projects; avoid logging full datasets
+2. **W&B free tier has a 5 GB storage limit** — 100 GB is the Pro plan, not the free tier; use `wandb.log()` selectively for large projects and avoid logging full datasets
 3. **Autolog captures too much** — Disable with `mlflow.sklearn.autolog(disable=True)` when you need manual control
 4. **Nested runs in MLflow** — Use `nested=True` for HPO trials, otherwise runs overwrite each other
 5. **W&B offline mode** — Set `WANDB_MODE=offline` for air-gapped environments, then `wandb sync` later
-6. **Model registry stage transitions** — Always add a description explaining WHY a model moved to Production
+6. **Model registry alias changes** — Always add a tag/description explaining WHY a model became `@champion` (stages are deprecated since MLflow 2.9.0; use aliases + tags)
 7. **TensorBoard scalars don't survive** — Logs are ephemeral local files; use MLflow/W&B for anything you need to keep
 8. **Step vs epoch confusion** — Be consistent: log per-step for training loss, per-epoch for validation metrics
 9. **Large artifacts block runs** — Log checkpoints asynchronously or only log the best checkpoint

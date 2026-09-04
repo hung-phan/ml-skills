@@ -323,7 +323,7 @@ With W=4096, cache never grows beyond 4096 entries per layer.
 **Context reach:** Through stacking L layers with window W, information propagates
 up to L×W tokens — a 32-layer model with W=4096 has effective reach of 131K tokens.
 
-**Models:** Mistral 7B (W=4096), Gemma (W=8192), Longformer (combines with global tokens).
+**Models:** Mistral 7B (W=4096), Gemma 2 (W=4096, interleaved local/global), Gemma 3 (W=1024, 5:1 local:global), Longformer (combines with global tokens).
 
 **Limitation:** Cannot directly attend to distant tokens in a single layer. Works
 because deep networks propagate information layer by layer.
@@ -449,12 +449,17 @@ reads/writes that bottleneck memory bandwidth.
 |---------|-------------|-------|
 | Flash-1 | Tiled IO-aware attention, 2-4× speedup | [arXiv:2205.14135](https://arxiv.org/abs/2205.14135) |
 | Flash-2 | Better work partitioning, causal masking, ~2× over Flash-1 | [arXiv:2307.08691](https://arxiv.org/abs/2307.08691) |
-| Flash-3 | H100 warp specialization, FP8, 1.5-2× over Flash-2 | [arXiv:2407.08691](https://arxiv.org/abs/2407.08608) |
+| Flash-3 | H100 warp specialization, FP8, 1.5-2× over Flash-2 | [arXiv:2407.08608](https://arxiv.org/abs/2407.08608) |
 
 **Result:** Exact attention (no approximation) in O(N²) FLOPs but O(N) memory.
 Enables 16× longer contexts on the same hardware.
 
-**Usage:** `torch.nn.functional.scaled_dot_product_attention` with `attn_implementation="flash_attention_2"` in HuggingFace, or `flash_attn` package directly.
+**Usage:** In HuggingFace Transformers, pick a backend via `attn_implementation`:
+`"flash_attention_2"`, `"flash_attention_3"` (Hopper/H100), or paged variants like
+`"paged|flash_attention_3"` — a distinct selection path from `"sdpa"`
+(`torch.nn.functional.scaled_dot_product_attention`). FA kernels can also be loaded
+automatically from the Hub via the `kernels` library. Or call the `flash_attn`
+package directly. See the [attention interface docs](https://huggingface.co/docs/transformers/en/attention_interface).
 
 ---
 
@@ -542,11 +547,15 @@ impacts decode latency.
 (DistServe, Splitwise). Prefill nodes use compute-optimized GPUs; decode nodes
 use memory-bandwidth-optimized GPUs.
 
-### POD-Attention (Prefill-Only Disaggregated)
+### POD-Attention (Fused Prefill-Decode Overlap)
 
-Prefill-only nodes compute KV-cache and transfer it to decode nodes over NVLink/IB.
-Eliminates the decode-node prefill cost entirely. Used in production at scale
-(Anthropic, Google).
+A fused GPU kernel that computes prefill and decode attention **concurrently within
+a single hybrid batch on one GPU**, maximizing joint use of compute (prefill-bound)
+and memory bandwidth (decode-bound). This is the opposite of disaggregated serving,
+which runs the two phases on separate hardware. Reports up to ~59% (mean ~28%)
+attention speedup over running the phases sequentially.
+
+**Paper:** [POD-Attention: Unlocking Full Prefill-Decode Overlap for Faster LLM Inference](https://arxiv.org/abs/2410.18038)
 
 ### Speculative Verify Attention
 
@@ -611,8 +620,8 @@ A batch of 32 requests at 4K context on Llama 3 8B: 512 MB × 32 = 16 GB just fo
 | Inference Engine | Attention Variant Support | Implementation |
 |-----------------|--------------------------|----------------|
 | vLLM | GQA, MQA, MHA, MLA | FlashAttention-2 + PagedAttention |
-| SGLang | GQA, MQA, MHA | FlashInfer + RadixAttention |
-| TensorRT-LLM | GQA, MQA, MHA | Custom CUDA + PagedAttention |
+| SGLang | GQA, MQA, MHA, MLA | FlashInfer + RadixAttention |
+| TensorRT-LLM | GQA, MQA, MHA, MLA | Custom CUDA + PagedAttention |
 | llama.cpp | GQA, MQA | Custom GGML kernels |
 
 ---

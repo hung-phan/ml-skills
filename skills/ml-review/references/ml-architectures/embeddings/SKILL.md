@@ -135,7 +135,7 @@ results = client.search(
 ```python
 from sentence_transformers import CrossEncoder
 
-reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L6-v2")
 
 query = "what is machine learning?"
 candidates = ["ML is a subset of AI", "Python is a language", "Neural nets learn patterns"]
@@ -153,11 +153,13 @@ ranked = sorted(zip(scores, candidates), reverse=True)
 | BAAI/bge-base-en-v1.5 | 768 | 63.6 | 512 | Best open-source base size |
 | BAAI/bge-large-en-v1.5 | 1024 | 64.2 | 512 | Slightly better, 2x compute |
 | intfloat/e5-large-v2 | 1024 | 62.0 | 512 | Strong zero-shot |
-| Alibaba/gte-large-en-v1.5 | 1024 | 65.4 | 8192 | Long context, high quality |
+| Alibaba-NLP/gte-large-en-v1.5 | 1024 | 65.4 | 8192 | Long context, high quality |
 | nomic-embed-text-v1.5 | 768 | 62.3 | 8192 | MRL-trained, truncatable to 256d |
 | text-embedding-3-large (OpenAI) | 3072 | 64.6 | 8191 | API-only, MRL (truncate to 256/1024) |
-| embed-english-v3.0 (Cohere) | 1024 | 64.5 | 512 | API-only, input_type parameter |
-| voyage-large-2 (Voyage AI) | 1024 | 66.6 | 16000 | Top API model for code+text |
+| embed-v4.0 (Cohere) | 1536 | -- | 128000 | API-only, multimodal (text+image+PDF), MRL dims 256/512/1024/1536, input_type parameter |
+| embed-english-v3.0 (Cohere) | 1024 | 64.5 | 512 | API-only, input_type parameter (legacy, superseded by embed-v4.0) |
+| voyage-3-large (Voyage AI) | 1024 | -- | 32000 | Top general API model, MRL to 256/512/2048; voyage-large-2 now legacy |
+| voyage-code-3 (Voyage AI) | 1024 | -- | 32000 | Best API model for code retrieval |
 
 **Choosing a model**:
 - Budget-constrained, self-hosted → BGE-base (768d, 110M params)
@@ -329,7 +331,7 @@ results = collection.hybrid_search(
 ## 9. References
 
 1. [Sentence-Transformers Documentation](https://www.sbert.net/) -- Training, loss functions, model hub
-2. [Sentence-Transformers GitHub](https://github.com/UKPLab/sentence-transformers) -- Source code and examples
+2. [Sentence-Transformers GitHub](https://github.com/huggingface/sentence-transformers) -- Source code and examples
 3. [Sentence-BERT Paper](https://arxiv.org/abs/1908.10084) -- Reimers & Gurevych, 2019: siamese BERT for semantic similarity
 4. [MTEB Leaderboard](https://huggingface.co/spaces/mteb/leaderboard) -- Massive Text Embedding Benchmark
 5. [FAISS Wiki](https://github.com/facebookresearch/faiss/wiki) -- Index types, GPU support, quantization
@@ -338,5 +340,5 @@ results = collection.hybrid_search(
 6. [BGE Paper (BAAI)](https://arxiv.org/abs/2309.07597) -- C-Pack training, instruction-tuned retrieval
 7. [SigLIP Paper](https://arxiv.org/abs/2303.15343) -- Sigmoid loss for vision-language, replaces CLIP softmax
 8. [Nomic Embed](https://huggingface.co/nomic-ai/nomic-embed-text-v1.5) -- Long-context, MRL, fully open weights+data
-9. [Mining Hard Negatives (sentence-transformers)](https://www.sbert.net/docs/package_reference/util.html#sentence_transformers.util.mine_hard_negatives) -- API reference
+9. [Mining Hard Negatives (sentence-transformers)](https://www.sbert.net/docs/package_reference/util.html#sentence_transformers.util.hard_negatives.mine_hard_negatives) -- API reference
 10. [HNSW Paper](https://arxiv.org/abs/1603.09320) -- Hierarchical Navigable Small World graphs for ANN

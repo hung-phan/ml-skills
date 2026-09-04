@@ -267,9 +267,11 @@ When downstream code parses the output, you have two layers of defense.
 |---|---|---|
 | **OpenAI Structured Outputs** (response_format) | JSON schema | API guide |
 | **Anthropic tool use** | JSON schema via tool definition | API guide |
-| **vLLM `guided_json`, `guided_regex`, `guided_grammar`** | JSON schema, regex, GBNF/Lark grammar | `../../ml-libraries/vllm/` |
+| **vLLM `structured_outputs`** (keys `json` / `regex` / `grammar` / `choice`; older `guided_*` params deprecated as of v0.12.0) | JSON schema, regex, GBNF/Lark grammar, finite choice set | `../../ml-libraries/vllm/` |
 | **SGLang `regex=`, `choices=`** in `gen()` | regex, finite choice set, JSON | `../../ml-libraries/sglang/` |
 | **Outlines / Guidance / Instructor** | JSON schema, regex, Pydantic | library docs |
+
+On current vLLM, pass constraints via the nested `structured_outputs` field — online with `extra_body={"structured_outputs": {"json": ...}}`, or offline with `StructuredOutputsParams(json=..., regex=..., grammar=..., choice=...)`. The flat `guided_json` / `guided_regex` / `guided_grammar` parameters are deprecated (v0.12.0) and map onto `structured_outputs.json` / `.regex` / `.grammar`.
 
 Default: prompt-side structure first, engine-side constraints when failures cost real money. Constraints can hurt fluency on free-form sub-fields (e.g., a "description" field) — so constrain the *shape*, not the *content* inside string fields.
 
@@ -428,7 +430,7 @@ The same pattern, fed to vLLM or SGLang via OpenAI-compatible chat-completions e
 - `../../ml-architectures/agents/` — tool-use prompting, ReAct, reflection, the indirect-injection threat surface that scales with every new tool.
 - `../../ml-architectures/llm/` — base/instruct/chat model taxonomy, alignment, decoding parameters.
 - `../../ml-libraries/dspy/` — declarative prompt programs and automated optimization (`BootstrapFewShot`, `MIPROv2`).
-- `../../ml-libraries/vllm/` — engine-side structured generation (`guided_json`, `guided_grammar`).
+- `../../ml-libraries/vllm/` — engine-side structured generation (`structured_outputs` with `json` / `grammar` keys; `guided_*` deprecated).
 - `../../ml-libraries/sglang/` — programmable prompts, constrained decoding (`regex=`, `choices=`), prefix-cache friendly.
 - `../llm-evaluation/` — evaluate prompts as ML experiments; AI-as-judge; jailbreak and hallucination scorecards.
 - `../experiment-tracking/` — log prompts, completions, eval scores; replay regressions.
@@ -440,12 +442,12 @@ The same pattern, fed to vLLM or SGLang via OpenAI-compatible chat-completions e
 Verified URLs (HTTP 2xx/3xx as of writing):
 
 - HuggingFace — Chat Templating: https://huggingface.co/docs/transformers/main/en/chat_templating
-- OpenAI — Prompt Engineering Guide: https://platform.openai.com/docs/guides/prompt-engineering
-- Anthropic — Prompt Engineering Overview: https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview
+- OpenAI — Prompt Engineering Guide: https://developers.openai.com/api/docs/guides/prompt-engineering
+- Anthropic — Prompt Engineering Overview: https://platform.claude.com/docs/en/docs/build-with-claude/prompt-engineering/overview
 - Wei et al. 2022 — Chain-of-Thought Prompting Elicits Reasoning in LLMs: https://arxiv.org/abs/2201.11903
 - Wang et al. 2022 — Self-Consistency Improves CoT Reasoning: https://arxiv.org/abs/2203.11171
 - Yao et al. 2023 — Tree of Thoughts: https://arxiv.org/abs/2305.10601
-- Survey of Prompt Injection Attacks: https://arxiv.org/abs/2310.12815
+- Liu et al. 2023 — Formalizing and Benchmarking Prompt Injection Attacks and Defenses: https://arxiv.org/abs/2310.12815
 - DSPy (Stanford NLP): https://github.com/stanfordnlp/dspy
 - Prompt Engineering Guide (community): https://www.promptingguide.ai/
 

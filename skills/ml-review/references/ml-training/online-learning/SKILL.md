@@ -62,7 +62,7 @@ for col in feature_cols:
 from river import drift
 
 adwin = drift.ADWIN(delta=0.002)
-ddm   = drift.DDM(min_num_instances=30)
+ddm   = drift.binary.DDM(warm_start=30)
 ph    = drift.PageHinkley(min_instances=30, threshold=50)
 
 for x, y_true in stream:
@@ -74,7 +74,7 @@ for x, y_true in stream:
             alert(f"{type(det).__name__} signaled drift")
 ```
 
-**Library landscape**: [`river`](https://riverml.xyz/) is the modern incremental-ML library; [`frouros`](https://frouros.readthedocs.io/) and [`alibi-detect`](https://docs.seldon.io/projects/alibi-detect/) focus on drift detection; [`evidently`](https://docs.evidentlyai.com/) is a higher-level monitoring + dashboard tool.
+**Library landscape**: [`river`](https://riverml.xyz/) is the modern incremental-ML library; [`frouros`](https://frouros.readthedocs.io/) and [`alibi-detect`](https://docs.seldon.ai/alibi-detect) focus on drift detection; [`evidently`](https://docs.evidentlyai.com/) is a higher-level monitoring + dashboard tool.
 
 ---
 
@@ -128,7 +128,7 @@ for x, y in stream:                    # x: dict, y: int
 
 For *deep* networks the modern continual-learning toolkit is broader: replay (iCaRL, GEM / A-GEM), regularization (EWC, SI, MAS), functional distillation (LwF, LwM), and parameter isolation (PackNet, HAT). See Wang et al. 2024 (TPAMI) https://www.computer.org/csdl/journal/tp/2024/08/10444954/1Vc1zg11leQ and van de Ven 2024 https://arxiv.org/abs/2403.05175 for canonical surveys. This skill stays focused on *classical-ML* online learning; deep-CL is a sibling topic worth its own skill if your LLM/vision model needs continual adaptation.
 
-> **Note:** `river` 0.23 (Sep 2025) requires Python ≥3.11. https://riverml.xyz/dev/releases/0.23.0/
+> **Note:** `river` 0.26.1 (current as of early 2026) requires Python ≥3.11 (as did 0.23.0, Sep 2025). https://riverml.xyz/dev/releases/0.23.0/
 
 ---
 
@@ -235,9 +235,9 @@ For a single-model project with simple features, a feature store is overkill —
 | Tool | Sweet spot |
 |------|------------|
 | [Feast](https://docs.feast.dev/) | Open-source, Python-native, lightweight; weak streaming |
-| [Tecton](https://www.tecton.ai/) | Managed, real-time / streaming features — strongest for live features |
+| [Tecton (now part of Databricks)](https://www.databricks.com/) | Managed, real-time / streaming features — strongest for live features |
 | [Hopsworks](https://www.hopsworks.ai/) | Open-source, Hudi-backed time travel, native streaming via Flink — best for hybrid / regulated workloads |
-| [Featureform](https://www.featureform.com/) | Virtual feature store layered over your existing stores (no new data plane) |
+| [Redis Feature Form](https://redis.io/feature-form/) | Virtual feature store (now a Redis product) layered over your existing stores (no new data plane) |
 | Vertex / SageMaker Feature Store | Cloud-native, lower operational overhead, slower feature velocity |
 | [Chronon](https://github.com/airbnb/chronon) | Airbnb origin, niche; batch-first |
 
@@ -285,7 +285,7 @@ For a single-model project with simple features, a feature store is overkill —
 - Page (1954) — Continuous inspection schemes (Page-Hinkley original): https://doi.org/10.1093/biomet/41.1-2.100
 - `river` documentation: https://riverml.xyz/
 - `frouros` (drift detection): https://frouros.readthedocs.io/
-- `alibi-detect`: https://docs.seldon.io/projects/alibi-detect/
+- `alibi-detect`: https://docs.seldon.ai/alibi-detect
 - `evidently`: https://docs.evidentlyai.com/
 - Akidau — *Streaming 101* / *Streaming 102*: https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/
 - Apache Flink event-time: https://nightlies.apache.org/flink/flink-docs-stable/docs/concepts/time/

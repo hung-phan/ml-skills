@@ -1,6 +1,6 @@
 ---
 name: nemo
-description: NVIDIA NeMo — opinionated NVIDIA-stack training framework for LLMs, multimodal, and speech AI. Built on Megatron-Core for native 5D parallelism (TP × PP × CP × EP × DP), FP8/MXFP8, MoE Parallel Folding, with verified configs for Llama / Qwen / DeepSeek-V3 and a deployment path through TensorRT-LLM / vLLM / NIM. Use when scaling pretraining or post-training across many NVIDIA GPUs (multi-node SLURM/K8s), training MoE models, needing FP8 on Hopper/Blackwell, or shipping to NIM/TRT-LLM.
+description: NVIDIA NeMo — opinionated NVIDIA-stack training framework for LLMs, multimodal, and speech AI. Built on Megatron-Core for native 5D parallelism (TP × PP × CP × EP × DP), FP8/MXFP8, MoE Parallel Folding, with verified configs for Llama / Qwen / DeepSeek-V3 and a deployment path through vLLM / Triton / NIM. Use when scaling pretraining or post-training across many NVIDIA GPUs (multi-node SLURM/K8s), training MoE models, needing FP8 on Hopper/Blackwell, or shipping to NIM/vLLM.
 ---
 
 # NVIDIA NeMo Framework
@@ -8,20 +8,20 @@ description: NVIDIA NeMo — opinionated NVIDIA-stack training framework for LLM
 - **Docs**: https://docs.nvidia.com/nemo-framework/user-guide/latest/
 - **GitHub org**: https://github.com/NVIDIA-NeMo
 - **Megatron-Core**: https://developer.nvidia.com/megatron-core
-- **NGC container**: `nvcr.io/nvidia/nemo:<release-tag>` (e.g. `25.07`, `25.09`, `25.11`)
+- **NGC container**: `nvcr.io/nvidia/nemo:<release-tag>` (e.g. `25.11`, `26.02`; `26.02` is latest)
 
 ## Why This Exists
 
 **Problem**: Training a 70B-parameter dense LLM or a 671B-parameter MoE across hundreds-to-thousands of GPUs requires composing **tensor + pipeline + context + expert + data parallelism**, FP8/MXFP8 mixed precision, communication overlap, activation recomputation, and CPU offload — all tuned together. Off-the-shelf wrappers (`accelerate`, `Trainer`, plain FSDP) don't expose these axes; gluing them yourself with Megatron-LM + DeepSpeed + custom launchers means re-deriving NVIDIA's tuning every time.
 
-**Key insight**: NeMo is the **opinionated NVIDIA-stack training framework**. It bundles Megatron-Core's 5D parallelism behind a PyTorch Lightning `MegatronStrategy`, ships **verified production configs** (Llama-3 70B = TP4·PP4·CP2 on 64 GPUs; DeepSeek-V3 671B = TP2·PP16·EP64 on 1024 GPUs), and connects training → checkpoint conversion → TensorRT-LLM/NIM deployment in one stack. You inherit NVIDIA's recipes instead of re-tuning them.
+**Key insight**: NeMo is the **opinionated NVIDIA-stack training framework**. It bundles Megatron-Core's 5D parallelism behind a PyTorch Lightning `MegatronStrategy`, ships **verified production configs** (Llama-3 70B = TP4·PP4·CP2 on 64 GPUs; DeepSeek-V3 671B = TP2·PP16·EP64 on 1024 GPUs), and connects training → checkpoint conversion → vLLM/NIM deployment in one stack. You inherit NVIDIA's recipes instead of re-tuning them.
 
 **Reach for this when**:
 - Pretraining / continued pretraining at **multi-node** scale (8+ GPUs across nodes, often 100s–1000s)
 - **MoE** models (DeepSeek-V3, Qwen-MoE, Mixtral) where Expert Parallelism + MoE Parallel Folding matter
 - **FP8 / MXFP8** on Hopper (H100/H200) or Blackwell (B100/B200/GB200)
 - **Long-context** training requiring Context Parallelism (CP)
-- Shipping to **NVIDIA NIM** or **TensorRT-LLM** in production
+- Shipping to **NVIDIA NIM** or **vLLM** in production
 - You're locked into the NVIDIA stack (CUDA + TransformerEngine + Megatron-Core) and want batteries-included rather than glue code
 
 **Don't reach for this when**:
@@ -35,7 +35,7 @@ description: NVIDIA NeMo — opinionated NVIDIA-stack training framework for LLM
 NeMo is **mid-reorganization**. As of 2026:
 
 - **NeMo 1.x is deprecated** since release `25.04`. The YAML/Hydra config style is going away.
-- The monolithic `NVIDIA/NeMo` repo **pivoted** to focus on **audio, speech, and multimodal LLM**. v2.7.0 was the last release with broader collections; v2.8.0 removed `llm/`, `nlp/`, `vision/`, `vlm/`, `multimodal/`, `diffusion/`, `speechlm/`.
+- The monolithic `NVIDIA/NeMo` repo **pivoted** to focus on **audio, speech, and multimodal LLM**. The 2.7.x line (v2.7.0–v2.7.3) was the last with broader collections; v3.0.0 (NeMo Speech 3.0) removed `llm/`, `nlp/`, `vision/`, `vlm/`, `multimodal/`, `diffusion/`, `speechlm/`.
 - LLM training, post-training, and inference are now spread across the **`NVIDIA-NeMo` GitHub org**:
 
 | Repo | Purpose |
@@ -44,10 +44,10 @@ NeMo is **mid-reorganization**. As of 2026:
 | [`NVIDIA-NeMo/Megatron-Bridge`](https://github.com/NVIDIA-NeMo/Megatron-Bridge) | Bidirectional HF ↔ Megatron-Core checkpoint conversion + verified pretraining recipes |
 | [`NVIDIA-NeMo/Automodel`](https://github.com/NVIDIA-NeMo/Automodel) | Fine-tune any HF LLM/VLM, save **HF-native checkpoints** (no conversion) |
 | [`NVIDIA-NeMo/RL`](https://github.com/NVIDIA-NeMo/RL) | Alignment — DPO, RLHF, REINFORCE (replacing NeMo-Aligner) |
-| [`NVIDIA-NeMo/Export-Deploy`](https://github.com/NVIDIA-NeMo/Export-Deploy) | Export to TensorRT-LLM / vLLM / Triton / Ray Serve / NIM |
+| [`NVIDIA-NeMo/Export-Deploy`](https://github.com/NVIDIA-NeMo/Export-Deploy) | LLM export via vLLM (bf16) served through Triton (PyTriton) / Ray Serve / NIM; TensorRT/ONNX for NIM embedding/reranking only |
 | [`NVIDIA-NeMo/Evaluator`](https://github.com/NVIDIA-NeMo/Evaluator) | Benchmark + eval harness |
 | [`NVIDIA-NeMo/Curator`](https://github.com/NVIDIA-NeMo/Curator) | Data curation / dedup at scale |
-| [`NVIDIA-NeMo/NeMo`](https://github.com/NVIDIA-NeMo/NeMo) | Speech + audio + multimodal-LLM only (post v2.8) |
+| [`NVIDIA-NeMo/NeMo`](https://github.com/NVIDIA-NeMo/NeMo) | Speech + audio + multimodal-LLM only (v3.0.0+) |
 
 **Pragmatic install**: use the NGC container (`nvcr.io/nvidia/nemo:<release-tag>`) which bundles Megatron-Core, TransformerEngine, and the right CUDA / cuDNN / NCCL versions. Picking individual pip packages requires matching CUDA/PyTorch/TE versions exactly — painful outside the container.
 
@@ -79,7 +79,7 @@ NeMo is **mid-reorganization**. As of 2026:
                 └──────────────────────────┘
                              │
                 ┌────────────▼─────────────┐
-                │   Export-Deploy          │  ← TRT-LLM / vLLM / Triton /
+                │   Export-Deploy          │  ← vLLM (LLM) / Triton /
                 │                          │     Ray Serve / NIM
                 └──────────────────────────┘
 ```
@@ -153,11 +153,11 @@ NeMo supports several FSDP implementations; pick by workload shape, not preferen
 
 | Target | Mechanism | Notes |
 |--------|-----------|-------|
-| **TensorRT-LLM** | Direct export from NeMo 2.0; **PyTorch backend** added in `25.07` | Best NVIDIA-native latency |
-| **vLLM** | NeMo → HF → vLLM (since `25.09`); **vLLM V1** since `25.04.01` | Use when you want vLLM's batching + LoRA hot-swap |
-| **Triton Inference Server** | Megatron-LM and Megatron-Bridge models supported since `25.09` | Multi-framework serving |
+| **vLLM** (primary LLM path) | `vLLMExporter` (bf16); NeMo → HF → vLLM; **vLLM V1** since `25.04.01` | Current primary LLM export/deploy path in Export-Deploy; batching + LoRA hot-swap |
+| **Triton Inference Server** (PyTriton) | Serves vLLM-exported models; Megatron-LM / Megatron-Bridge supported since `25.09` | Multi-framework serving |
 | **Ray Serve** | Multi-instance deployment since `25.07` | Pair with Ray Train for end-to-end Ray pipelines |
 | **NVIDIA NIM** | NeMo 2.0 → NIM export path (since `24.12`, expanded `25.04.00`) | Productionizes a model as a microservice with OpenAI-compatible API |
+| **TensorRT / ONNX** | Export via `onnx_llm_exporter` — **embedding / reranking (NIM) models only** | No longer an LLM export backend in current Export-Deploy |
 
 For NIM specifically: NeMo trains → exports a NIM-compatible artifact → NIM serves it as a containerized microservice. This is the canonical NVIDIA "internal foundation model" deployment story.
 
@@ -166,98 +166,81 @@ For NIM specifically: NeMo trains → exports a NIM-compatible artifact → NIM 
 ### Minimal pretraining recipe (NeMo 2.0 + Megatron-Bridge style)
 
 ```python
-# Inside the NGC container: nvcr.io/nvidia/nemo:25.11
-import nemo_run as run
-from megatron.bridge.recipes.llama import llama3_70b
-from megatron.bridge import AutoBridge
+# Inside the NGC container: nvcr.io/nvidia/nemo:26.02
+from megatron.bridge.recipes.llama.llama3 import llama3_70b_pretrain_config
+from megatron.bridge.training.gpt_step import forward_step
+from megatron.bridge.training.pretrain import pretrain
 
-# Pull a verified pretraining recipe — TP/PP/CP already tuned
-recipe = llama3_70b.pretrain_recipe(
-    name="llama3-70b-pretrain",
-    num_nodes=8,            # 8 nodes × 8 GPUs = 64 GPUs
-    num_gpus_per_node=8,
-)
+# Verified pretraining config — returns a ConfigContainer (fields: .model / .train / .optimizer)
+cfg = llama3_70b_pretrain_config()
 
-# Override what you need
-recipe.trainer.strategy.tensor_model_parallel_size = 4
-recipe.trainer.strategy.pipeline_model_parallel_size = 4
-recipe.trainer.strategy.context_parallel_size = 2
-recipe.trainer.strategy.sequence_parallel = True
-recipe.trainer.precision = "bf16-mixed"  # or "fp8-mixed" on Hopper+
+# Override what you need directly on the config
+cfg.model.tensor_model_parallel_size = 4
+cfg.model.pipeline_model_parallel_size = 4
+cfg.model.context_parallel_size = 2
+cfg.model.sequence_parallel = True
+# precision lives on the model config (e.g. cfg.model.bf16 = True, or cfg.model.fp8 = "hybrid" on Hopper+)
 
-# Launch on SLURM
-executor = run.SlurmExecutor(
-    account="your-account",
-    partition="batch",
-    nodes=8,
-    ntasks_per_node=8,
-    gpus_per_node=8,
-    time="06:00:00",
-    container_image="nvcr.io/nvidia/nemo:25.11",
-)
-
-run.run(recipe, executor=executor)
+# Launch (for multi-node SLURM/K8s, wrap this in a NeMo Run SlurmExecutor — see Installation)
+pretrain(cfg, forward_step)
 ```
 
 ### LoRA fine-tune (AutoModel — HF-native output)
 
-```python
-# pip install nemo-automodel  (or use NGC container)
-from nemo_automodel.recipes.llm.peft import lora_finetune
+AutoModel is driven by the `automodel` CLI over a YAML recipe; LoRA is enabled in the recipe's
+PEFT block (no Python glue needed). See the
+[SFT / PEFT recipe example](https://docs.nvidia.com/nemo/automodel/latest/recipes-e2e-examples/sft-peft.html).
 
-lora_finetune(
-    model_name="meta-llama/Llama-3.1-8B-Instruct",
-    dataset="tatsu-lab/alpaca",
-    output_dir="./llama-3.1-8b-alpaca-lora",
-    lora_rank=16,
-    lora_alpha=32,
-    lora_target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
-    learning_rate=2e-4,
-    num_epochs=1,
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,
-    fsdp="fsdp2",           # or "ddp" on a single GPU
-)
+```bash
+pip install nemo-automodel[cli]
 
-# Output: ./llama-3.1-8b-alpaca-lora/  — adapter is PEFT-library compatible.
-# Load directly with `peft.PeftModel.from_pretrained(...)` or push to HF Hub.
+# Launch a PEFT (LoRA) recipe across N GPUs; LoRA lives in the YAML's `peft:` section.
+automodel --nproc-per-node=2 llama3_2_1b_squad.yaml
 ```
+
+To drive it programmatically instead of via the CLI, invoke `nemo_automodel.recipes.llm.train_ft`
+(`TrainFinetuneRecipeForNextTokenPrediction`, entrypoint `main(config_path=...)`).
+
+Output lands in **native HF format** — the LoRA adapter is PEFT-library compatible, loadable via
+`peft.PeftModel.from_pretrained(...)` or pushable directly to HF Hub.
 
 ### HF → Megatron checkpoint conversion (Megatron-Bridge)
 
 ```python
 from megatron.bridge import AutoBridge
 
-# Import an HF checkpoint into Megatron format for distributed training
+# Import an HF checkpoint into Megatron format for distributed training (classmethod)
 AutoBridge.import_ckpt(
-    hf_model_id_or_path="meta-llama/Llama-3.1-70B",
-    target_path="./megatron-ckpts/llama3.1-70b",
+    hf_model_id="meta-llama/Llama-3.1-70B",
+    megatron_path="./megatron-ckpts/llama3.1-70b",
 )
 
-# After training, export back to HF for downstream use
-AutoBridge.export_ckpt(
-    megatron_ckpt_path="./trained-megatron-ckpt",
-    target_path="./hf-export/my-llama3.1-70b-tuned",
+# After training, export back to HF for downstream use (instance method)
+bridge = AutoBridge.from_hf_pretrained("meta-llama/Llama-3.1-70B")
+bridge.export_ckpt(
+    megatron_path="./trained-megatron-ckpt",
+    hf_path="./hf-export/my-llama3.1-70b-tuned",
 )
 ```
 
-### Export to TensorRT-LLM
+### Export to vLLM (Export-Deploy)
 
 ```python
-from nemo.export.tensorrt_llm import TensorRTLLM
+# The current Export-Deploy LLM path exports to vLLM (bf16); serve via Triton (PyTriton) or Ray Serve.
+from nemo_export.vllm_exporter import vLLMExporter
 
-trt = TensorRTLLM(model_dir="./trt-engine-out")
-trt.export(
-    nemo_checkpoint_path="./trained-megatron-ckpt",
+exporter = vLLMExporter()
+exporter.export(
+    nemo_checkpoint="./trained-megatron-ckpt",
+    model_dir="./vllm-export",
     model_type="llama",
-    n_gpus=2,                # tensor parallel for inference
-    dtype="bf16",            # or "fp8"
-    max_input_len=4096,
-    max_output_len=1024,
-    max_batch_size=64,
+    tensor_parallel_size=2,       # tensor parallel for inference
+    dtype="bfloat16",
+    max_model_len=4096,
 )
 
-# Now serve via Triton + TRT-LLM backend, or load via NIM.
+# Serve the export via PyTriton or Ray Serve, or load the HF-format export directly in vLLM.
+# (TensorRT/ONNX export now targets embedding/reranking NIM models, not LLMs.)
 ```
 
 ## Decision Table — When to Pick NeMo
@@ -306,7 +289,7 @@ They operate at **different layers** and **compose** rather than compete:
 
 6. **NeMo-Aligner ↔ NVIDIA-NeMo/RL migration** — alignment workflows are moving from `NVIDIA/NeMo-Aligner` to `NVIDIA-NeMo/RL`. Pin to a release tag rather than `main`.
 
-7. **Speech/multimodal users on the wrong repo** — after v2.8, speech / audio / multimodal LLM stay in `NVIDIA-NeMo/NeMo`. LLM-only users should look in `Megatron-Bridge` / `AutoModel` instead.
+7. **Speech/multimodal users on the wrong repo** — as of v3.0.0, speech / audio / multimodal LLM stay in `NVIDIA-NeMo/NeMo`. LLM-only users should look in `Megatron-Bridge` / `AutoModel` instead.
 
 8. **Checkpoint format drift** — `Megatron-Bridge` (HF↔Megatron), `AutoModel` (HF-native), and Megatron-Core native checkpoints are three different formats. Use the bridge for conversion; don't hand-edit.
 
@@ -317,14 +300,14 @@ They operate at **different layers** and **compose** rather than compete:
 ## Installation (NGC container — recommended)
 
 ```bash
-# Pull the latest NeMo container (2026-Q2 example tag)
-docker pull nvcr.io/nvidia/nemo:25.11
+# Pull the latest NeMo container (26.02 = Feb-2026; latest at time of writing)
+docker pull nvcr.io/nvidia/nemo:26.02
 
 # Interactive run on a single node, all GPUs
 docker run --gpus all --ipc=host --net=host \
     -v $HOME/data:/workspace/data \
     -v $HOME/checkpoints:/workspace/checkpoints \
-    -it nvcr.io/nvidia/nemo:25.11
+    -it nvcr.io/nvidia/nemo:26.02
 
 # Inside the container, all of Megatron-Core, TransformerEngine, NeMo Run,
 # Megatron-Bridge, AutoModel are pre-installed at compatible versions.
@@ -351,7 +334,7 @@ For multi-node SLURM, drive the same image via `enroot` / `pyxis` and a NeMo Run
 - **NeMo 2.0 introduction (24.09)**: https://docs.nvidia.com/nemo-framework/user-guide/24.09/nemo-2.0/index.html
 - **Parallelisms feature page (24.12)**: https://docs.nvidia.com/nemo-framework/user-guide/24.12/nemotoolkit/features/parallelisms.html
 - **MegatronStrategy (25.07)**: https://docs.nvidia.com/nemo-framework/user-guide/25.07/nemo-2.0/features/megatron.html
-- **AutoModel LLM fine-tuning guide**: https://docs.nvidia.com/nemo/automodel/latest/guides/llm/finetune.html
+- **AutoModel SFT / LoRA (PEFT) guide**: https://docs.nvidia.com/nemo/automodel/latest/recipes-e2e-examples/sft-peft.html
 - **Megatron-Core developer page**: https://developer.nvidia.com/megatron-core
 - **Megatron-Core parallelism guide**: https://docs.nvidia.com/megatron-core/developer-guide/latest/user-guide/parallelism-guide.html
 - **Megatron-Core MoE guide (0.15)**: https://docs.nvidia.com/megatron-core/developer-guide/0.15.0/api-guide/moe.html

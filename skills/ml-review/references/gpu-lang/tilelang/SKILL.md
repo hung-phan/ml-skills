@@ -93,9 +93,9 @@ def matmul_relu(
     dtype: T.dtype = T.float16, accum_dtype: T.dtype = T.float32,
 ):
     M, N, K = T.const('M, N, K')
-    A: T.Tensor[[M, K], dtype]
-    B: T.Tensor[[K, N], dtype]
-    C = T.empty([M, N], dtype)
+    A: T.Tensor((M, K), dtype)
+    B: T.Tensor((K, N), dtype)
+    C = T.empty((M, N), dtype)
 
     with T.Kernel(T.ceildiv(N, block_N), T.ceildiv(M, block_M), threads=128) as (bx, by):
         A_shared = T.alloc_shared((block_M, block_K), dtype)
@@ -256,7 +256,7 @@ cd tilelang && pip install -e . -v
 
 ## References
 
-- GitHub: https://github.com/tile-ai/tilelang (6.4k+ stars, MIT license)
+- GitHub: https://github.com/tile-ai/tilelang (7.3k+ stars, MIT license)
 - Documentation: https://tilelang.com/
 - Puzzles (interactive learning): https://github.com/tile-ai/tilelang-puzzles
 - Benchmarks: https://github.com/tile-ai/tilelang-benchmark
@@ -265,5 +265,5 @@ cd tilelang && pip install -e . -v
 - FlashAttention examples: https://github.com/tile-ai/tilelang/tree/main/examples/flash_attention
 - CuTeDSL backend (CUTLASS codegen): https://github.com/tile-ai/tilelang/pull/1421
 - DeepWiki (AI-generated docs): https://deepwiki.com/tile-ai/tilelang
-- AtlasCloud tutorial: https://www.atlascloud.ai/blog/guides/writing-high-performance-kernels-in-tilelang
+- AtlasCloud tutorial: https://www.atlascloud.ai/blog/tips/writing-high-performance-kernels-in-tilelang
 - Developed at Peking University, with Microsoft Research collaboration

@@ -130,9 +130,9 @@ Linear CUPED uses one pre-period covariate. When a stronger predictor of the pos
 |--------|------|------|
 | **CUPED** (Microsoft 2013) | Linear adjustment using one pre-period metric | Default — always run if pre-period data exists |
 | **CUPAC** (DoorDash 2020) | Replace linear covariate with a gradient-boosted prediction of the post-period metric | A pre-trained model can predict the metric better than its own pre-period value |
-| **MLRATE / DR-CUPED** (Guo 2021, Jin & Ba 2022) | Cross-fit doubly-robust ML adjustment — unbiased even when the ML model is misspecified | Productionizing variance reduction at scale; want statistical guarantees |
+| **MLRATE / DR-CUPED** (Guo 2021, Jin & Ba 2021) | Cross-fit doubly-robust ML adjustment — unbiased even when the ML model is misspecified | Productionizing variance reduction at scale; want statistical guarantees |
 
-Typical gains: CUPAC over CUPED is another 10-30% variance cut; MLRATE/DR-CUPED tighten further with cross-fitting. DoorDash, Netflix, and Meta run these in production. Sources: https://careers.doordash.com/blog/improving-experimental-power-through-control-using-predictions-as-covariate-cupac/ · https://arxiv.org/abs/2106.07263 · https://arxiv.org/abs/2210.04660
+Typical gains: CUPAC over CUPED is another 10-30% variance cut; MLRATE/DR-CUPED tighten further with cross-fitting. DoorDash, Netflix, and Meta run these in production. Sources: https://careersatdoordash.com/blog/improving-experimental-power-through-control-using-predictions-as-covariate-cupac/ · https://arxiv.org/abs/2106.07263 · https://arxiv.org/abs/2110.13406
 
 ### Production platforms
 
@@ -263,14 +263,14 @@ Run them in series: shadow → canary → A/B → holdout. Each catches a differ
 - Deng et al. (2013) — CUPED variance reduction: https://exp-platform.com/Documents/2013-02-CUPED-ImprovingSensitivityOfControlledExperiments.pdf
 - Howard, Ramdas, McAuliffe, Sekhon (2021) — Time-uniform, nonparametric, nonasymptotic confidence sequences: https://arxiv.org/abs/1810.08240
 - Waudby-Smith & Ramdas (JRSS-B 2024) — *Estimating means of bounded random variables by betting* (tighter confidence sequences): https://arxiv.org/abs/2010.09686
-- Lindon, Malek et al. (2022) — *Anytime-Valid Linear Models and Regression Adjusted Causal Inference* (Netflix production): https://arxiv.org/abs/2210.08589
-- Bojinov, Simchi-Levi, Zhao (2023) — Anytime-valid switchback / panel designs: https://arxiv.org/abs/2208.14197
+- Lindon, Ham, Tingley, Bojinov (2022) — *Anytime-Valid Linear Models and Regression Adjusted Causal Inference* (Netflix production): https://arxiv.org/abs/2210.08589
+- Bojinov, Simchi-Levi, Zhao (2023) — *Design and Analysis of Switchback Experiments* (optimal design + randomization-based inference, Management Science): https://arxiv.org/abs/2009.00148
 - Johari, Pekelis, Walsh (2017) — Always-Valid Inference (mSPRT): https://arxiv.org/abs/1512.04922
 - Lattimore & Szepesvári — *Bandit Algorithms* (2020), free PDF: https://tor-lattimore.com/downloads/book/book.pdf
 - Russo et al. (2018) — *A Tutorial on Thompson Sampling*: https://arxiv.org/abs/1707.02038
 - Bottou et al. (2013) — Counterfactual Reasoning and Learning Systems: https://arxiv.org/abs/1209.2355
 - `confseq` (always-valid CIs): https://github.com/gostevehoward/confseq
-- Fabijan, Gupchup et al. (KDD 2019) — *Diagnosing Sample Ratio Mismatch in Online Controlled Experiments*: https://www.kdd.org/kdd2019/accepted-papers/view/sample-ratio-mismatch-a-noise-trap-and-srm-checks-the-essential-ab-testin
+- Fabijan, Gupchup et al. (KDD 2019) — *Diagnosing Sample Ratio Mismatch in Online Controlled Experiments*: https://dl.acm.org/doi/10.1145/3292500.3330722
 - Zheng (2015) — *Evaluating Machine Learning Models* (the four-tier metric framing originated here): https://www.oreilly.com/library/view/evaluating-machine-learning/9781492048756/
 
 ## See Also

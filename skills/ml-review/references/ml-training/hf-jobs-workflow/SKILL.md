@@ -114,7 +114,7 @@ config = SFTConfig(
 )
 ```
 
-Set `hub_strategy="every_save"` so a job that crashes at 90% complete still leaves a usable checkpoint behind. The token (`HF_TOKEN`) is auto-injected into HF Jobs secrets — don't pass it explicitly in the script.
+Set `hub_strategy="every_save"` so a job that crashes at 90% complete still leaves a usable checkpoint behind. HF Jobs does **not** auto-inject your token. You must forward it as a secret at submission — `--secrets HF_TOKEN` (CLI, reads the value from your local logged-in env) or `secrets={"HF_TOKEN": os.environ["HF_TOKEN"]}` (Python `run_uv_job` / `run_job`). Do not hardcode the literal token in the script body; pass it as a secret so it is encrypted server-side. Without the token, `push_to_hub` fails and the model is lost.
 
 ## Training Logging That Survives the Logs Tab
 
@@ -140,8 +140,10 @@ import os
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 os.environ["TQDM_DISABLE"]                  = "1"
 os.environ["TRANSFORMERS_VERBOSITY"]        = "warning"
-os.environ["HF_HUB_ENABLE_HF_TRANSFER"]     = "1"  # 5–10× faster Hub uploads
+os.environ["HF_XET_HIGH_PERFORMANCE"]       = "1"  # saturate bandwidth for Hub (Xet) uploads
 ```
+
+The Xet storage backend is now the default fast-transfer path, so `HF_HUB_ENABLE_HF_TRANSFER` is deprecated — `hf_transfer` is no longer used and the flag has no effect. Set `HF_XET_HIGH_PERFORMANCE=1` when you want to saturate available bandwidth on Xet uploads.
 
 ## Submit-One-Then-Batch
 

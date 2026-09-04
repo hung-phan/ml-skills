@@ -34,26 +34,32 @@ optimizer = dspy.MIPROv2(
     max_labeled_demos=4,
     num_threads=4,
 )
-optimized = optimizer.compile(module, trainset=trainset, num_trials=len(trainset))
+optimized = optimizer.compile(module, trainset=trainset)
 ```
 
-| Preset | Trials | Bootstrapped | Use Case |
+`auto` and manual trial control are mutually exclusive: when `auto` is set, do NOT pass `num_candidates` or `num_trials` to `compile()` (DSPy raises `ValueError`). For manual control, set `auto=None` in the constructor and pass BOTH `num_candidates` and `num_trials` to `compile()`.
+
+| Preset | `num_candidates` (n) | Trials (single predictor) | Use Case |
 |--------|--------|-------------|----------|
-| `light` | ~10 | 2 | Quick iteration |
-| `medium` | ~25 | 4 | Standard |
-| `heavy` | ~50+ | 8 | Maximum quality |
+| `light` | 6 | ~9-10 | Quick iteration |
+| `medium` | 12 | ~18 | Standard |
+| `heavy` | 18 | ~27 | Maximum quality |
+
+Trials are derived as `int(max(2*num_vars*log2(n), 1.5*n))` and scale with predictor count. `max_bootstrapped_demos` is a separate constructor arg (default 4), not governed by the auto preset.
 
 ## GEPA Configuration
 
 ```python
 optimizer = dspy.GEPA(
     metric=gepa_metric,  # must return Prediction(score, feedback)
+    auto="light",        # budget: exactly one of auto / max_full_evals / max_metric_calls
+    reflection_lm=dspy.LM("openai/gpt-4o", temperature=1.0, max_tokens=32000),
     num_threads=4,
 )
 optimized = optimizer.compile(module, trainset=trainset)
 ```
 
-GEPA reads `feedback` verbatim in its reflection prompt — this is the primary optimization lever. See **metrics-and-feedback** skill for GEPA metric design.
+GEPA requires exactly one of `auto` / `max_full_evals` / `max_metric_calls` to set the budget, plus a `reflection_lm` (or a custom `instruction_proposer`) — omitting either raises `AssertionError`. GEPA reads `feedback` verbatim in its reflection prompt — this is the primary optimization lever. See **metrics-and-feedback** skill for GEPA metric design.
 
 ## Before/After Testing
 
@@ -62,8 +68,10 @@ evaluator = dspy.Evaluate(devset=valset, metric=metric, num_threads=4)
 baseline = evaluator(module)
 optimized = optimizer.compile(module, trainset=trainset)
 improved = evaluator(optimized)
-print(f"{baseline:.2f} → {improved:.2f} ({(improved-baseline)/baseline*100:.1f}%)")
+print(f"{baseline.score:.2f} → {improved.score:.2f} ({(improved.score-baseline.score)/baseline.score*100:.1f}%)")
 ```
+
+`Evaluate.__call__` returns an `EvaluationResult` (score + per-example `results`), not a bare float — access `.score` for the aggregate metric.
 
 ## Save/Load
 
@@ -75,7 +83,7 @@ loaded.load("my_module.json")
 
 ## Gotchas
 
-- `num_trials ≥ len(trainset)` — fewer means some examples never seen
+- `num_trials` (number of Bayesian optimization trials) and `auto` are mutually exclusive — set one or the other, never both
 - MIPROv2 metric must return float, not int or bool
 - `num_threads` = parallel LLM calls — budget accordingly
 - `init_temperature > 1.0` encourages exploration early

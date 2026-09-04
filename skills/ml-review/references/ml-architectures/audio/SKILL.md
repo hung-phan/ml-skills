@@ -79,7 +79,7 @@ Before anything else: most modern audio generators don't predict raw waveforms �
 
 | Family | Idea | Examples | Trade-off |
 |--------|------|----------|-----------|
-| **Autoregressive codec-LM** | Decoder-only LM over codec tokens, text as prefix | **VALL-E**, **XTTS-v2**, **Bark**, **Parler-TTS** | Best zero-shot cloning, slower, can hallucinate |
+| **Autoregressive codec-LM** | Decoder-only LM over codec tokens, text as prefix | **VALL-E**, **XTTS-v2**, **Bark**, **Parler-TTS**, **Chatterbox** | Best zero-shot cloning, slower, can hallucinate |
 | **Non-autoregressive parallel** | Predict all frames in parallel + duration model | **FastSpeech2**, **VITS** | Fast, deterministic, lower expressivity |
 | **Diffusion TTS** | Iterative denoising of latent / codec / mel features | **NaturalSpeech 2/3**, **E2-TTS** | High quality, multi-step inference |
 | **Flow-matching TTS** | Continuous-time vector field, fewer NFE than diffusion | **F5-TTS**, **Voicebox**, **Matcha-TTS** | SOTA quality/speed; current default for new work |
@@ -91,12 +91,13 @@ Before anything else: most modern audio generators don't predict raw waveforms �
 | Need | Pick | Why |
 |------|------|-----|
 | Real-time / streaming / duplex | **Kyutai TTS, Moshi** | Frame-synchronous, <300 ms first token |
-| Zero-shot cloning from 3-30 s | **F5-TTS, XTTS-v2, E2-TTS** | Flow-matching / AR with in-context speaker prompt |
+| Zero-shot cloning from 3-30 s | **F5-TTS, XTTS-v2, E2-TTS, Chatterbox** | Flow-matching / AR with in-context speaker prompt |
 | Multilingual (15+ langs) | **XTTS-v2, Parler-TTS, Bark** | XTTS = 17 langs |
 | Quality-first / studio | **F5-TTS, NaturalSpeech 3** | Flow-matching SOTA on LibriSpeech |
 | Tiny / on-device / CPU | **Kokoro-82M, Piper, Matcha-TTS** | <100 M params, real-time on CPU |
-| Commercial-friendly weights | **Parler-TTS** (Apache-2.0), **Kokoro** (Apache-2.0) | Most "open" TTS are non-commercial — check license |
+| Commercial-friendly weights | **Parler-TTS** (Apache-2.0), **Kokoro** (Apache-2.0), **Chatterbox** (MIT) | Most "open" TTS are non-commercial — check license |
 | Prompt-controllable style | **Parler-TTS** | Natural-language style descriptions |
+| Emotion / expressiveness control | **Chatterbox** | Unique exaggeration + cfg_weight knobs; MIT; built-in PerTh watermark; Multilingual V3 covers 23+ langs, Nano (110M) runs on CPU |
 
 > License gotcha: **F5-TTS** is CC-BY-NC, **XTTS-v2** is CPML (non-commercial), **Bark** is MIT. Always verify before shipping.
 
@@ -162,7 +163,7 @@ sf.write("out.wav", audio, model.config.sampling_rate)
 | General SFX / Foley | **Stable Audio Open**, **AudioGen** | Trained on Freesound / AudioSet |
 | Vocals + lyrics (full song) | **YuE** or **ACE-Step** | Open-weight lyric-aware text-to-song |
 | Continuation / inpainting | **MusicGen** (audio-prompted) or **Stable Audio Open** (audio-to-audio) | AR continues naturally; latent diffusion supports masked inpainting |
-| Commercial-licensable weights | **Stable Audio Open 1.0** (Stability Community License), **ACE-Step** (Apache-2.0) | MusicGen weights are CC-BY-NC; YuE is research-only |
+| Commercial-licensable weights | **Stable Audio Open 1.0** (Stability Community License), **ACE-Step** (Apache-2.0), **YuE** (Apache-2.0) | MusicGen weights are CC-BY-NC; ACE-Step and YuE are both Apache-2.0 (commercially usable) |
 | Melody-conditioned | **MusicGen-Melody** | Only major open model with chromagram cond. |
 | Speech + music + SFX in one | **AudioLDM 2** | Unified latent space across modalities |
 
@@ -191,7 +192,7 @@ wav.write("out.wav", model.config.audio_encoder.sampling_rate,
 
 | Approach | Idea | Examples |
 |----------|------|----------|
-| **Zero-shot in-context** | 3-30 s reference audio at inference; speaker info as prompt tokens or acoustic prompt — no training | **XTTS-v2**, **F5-TTS**, **CosyVoice 2**, **OpenVoice v2**, **VALL-E** |
+| **Zero-shot in-context** | 3-30 s reference audio at inference; speaker info as prompt tokens or acoustic prompt — no training | **XTTS-v2**, **F5-TTS**, **CosyVoice 2**, **OpenVoice v2**, **VALL-E**, **Chatterbox** |
 | **Few-shot fine-tune** | LoRA / speaker-embedding fine-tune on minutes-to-hours of clean target audio; higher fidelity than zero-shot | **Tortoise-TTS** fine-tune, **StyleTTS2** LoRA, **XTTS-v2** fine-tune |
 | **Speaker-embedding conditioning** | Pretrained d-vector / x-vector / **ECAPA-TDNN** / WavLM-SV embedding as global condition | YourTTS, SpeechT5, FreeVC speaker encoder |
 | **Voice conversion (any-to-any)** | Map source speech to target timbre, preserving content; no transcript needed | **RVC**, **so-vits-svc** (singing), **FreeVC**, **kNN-VC** (training-free) |
@@ -289,6 +290,7 @@ Voice cloning enables impersonation fraud and non-consensual deepfakes. Before d
 - [HiFi-GAN (Kong et al., 2020)](https://arxiv.org/abs/2010.05646) — vocoder, [repo](https://github.com/jik876/hifi-gan)
 - [BigVGAN (Lee et al., 2022)](https://arxiv.org/abs/2206.04658) — universal vocoder, [NVIDIA/BigVGAN](https://github.com/NVIDIA/BigVGAN)
 - [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) — small Apache-2.0 TTS
+- [Chatterbox (Resemble AI, 2025)](https://github.com/resemble-ai/chatterbox) — MIT zero-shot TTS with emotion-exaggeration control + built-in PerTh watermark, [resemble-ai/chatterbox](https://huggingface.co/resemble-ai/chatterbox)
 
 ### Music & General Audio
 - [MusicGen (Copet et al., 2023)](https://arxiv.org/abs/2306.05284) — AR codec-LM with delay pattern, [musicgen-large](https://huggingface.co/facebook/musicgen-large), [musicgen-melody](https://huggingface.co/facebook/musicgen-melody)

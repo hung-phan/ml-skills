@@ -227,25 +227,53 @@ for epoch in range(epochs):
         loss = train_step(x_batch, y_batch)
 ```
 
-### Keras 3 backend-agnostic training loop
-```python
-import keras.ops as ops
+### Keras 3 custom train_step (backend-specific)
+There is no unified `keras.backend.GradientTape`. Subclass `keras.Model` and override
+`train_step()` per backend; the optimizer update is `self.optimizer.apply(grads, self.trainable_variables)`.
 
-class CustomTrainer(keras.Model):
+```python
+# TensorFlow backend
+class TFTrainer(keras.Model):
     def train_step(self, data):
         x, y = data
-        with keras.backend.GradientTape() as tape:
+        with tf.GradientTape() as tape:
             y_pred = self(x, training=True)
             loss = self.compute_loss(y=y, y_pred=y_pred)
         grads = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
-        for metric in self.metrics:
-            if metric.name == "loss":
-                metric.update_state(loss)
-            else:
-                metric.update_state(y, y_pred)
-        return {m.name: m.result() for m in self.metrics}
+        self.optimizer.apply(grads, self.trainable_variables)
+        return self.compute_metrics(x, y, y_pred, sample_weight=None)
 ```
+
+```python
+# PyTorch backend
+class TorchTrainer(keras.Model):
+    def train_step(self, data):
+        x, y = data
+        self.zero_grad()
+        y_pred = self(x, training=True)
+        loss = self.compute_loss(y=y, y_pred=y_pred)
+        loss.backward()
+        grads = [v.value.grad for v in self.trainable_variables]
+        with torch.no_grad():
+            self.optimizer.apply(grads, self.trainable_variables)
+        return self.compute_metrics(x, y, y_pred, sample_weight=None)
+```
+
+```python
+# JAX backend — stateless functional gradients
+class JAXTrainer(keras.Model):
+    def train_step(self, state, data):
+        trainable_vars, non_trainable_vars, optimizer_vars, metrics_vars = state
+        x, y = data
+        grad_fn = jax.value_and_grad(self.compute_loss_and_updates, has_aux=True)
+        (loss, aux), grads = grad_fn(trainable_vars, non_trainable_vars, x, y)
+        trainable_vars, optimizer_vars = self.optimizer.stateless_apply(
+            optimizer_vars, grads, trainable_vars
+        )
+        # rebuild and return the updated state tuple
+```
+
+Keras publishes three separate guides — [TensorFlow](https://keras.io/guides/custom_train_step_in_tensorflow/), [PyTorch](https://keras.io/guides/custom_train_step_in_torch/), and [JAX](https://keras.io/guides/custom_train_step_in_jax/).
 
 ---
 
@@ -283,9 +311,8 @@ model.fit(train_ds, epochs=5)
 ```
 
 ### Available pretrained models
-- **Vision**: EfficientNetV2, ResNet, ConvNeXt, ViT (via keras_cv)
-- **NLP**: BERT, GPT-2, T5 (via keras_nlp / keras_hub)
-- **Audio**: via keras_hub
+- **Vision / NLP / Audio**: pretrained checkpoints via `keras_hub`, e.g. `keras_hub.models.ImageClassifier.from_preset(...)`, `keras_hub.models.BertClassifier.from_preset(...)`
+- **Note**: KerasCV (archived Mar 2026) and KerasNLP are deprecated; KerasHub is the unified successor for all pretrained models.
 
 ---
 
@@ -354,11 +381,14 @@ model.load_weights("weights.weights.h5")
 
 ### Export for serving
 ```python
-# TF SavedModel (TF backend only)
+# SavedModel (default: format="tf_saved_model")
 model.export("saved_model/")
 
-# ONNX (via tf2onnx or keras2onnx)
+# ONNX (native in Keras 3, all backends)
+model.export("model.onnx", format="onnx")
 ```
+
+> `model.export()` supports `format="tf_saved_model"` (default), `"onnx"`, `"openvino"`, `"litert"`, and `"torch"` across the TF/JAX/Torch backends — no third-party converters (`keras2onnx` is archived).
 
 ### Checkpoint during training
 ```python
@@ -372,7 +402,7 @@ keras.callbacks.ModelCheckpoint(
 
 ## Keras 3 Multi-Backend
 
-Keras 3 supports JAX, PyTorch, and TensorFlow as backends.
+Keras 3 supports JAX, PyTorch, and TensorFlow as backends, plus OpenVINO as an inference-only backend (set via `KERAS_BACKEND=openvino`; it does not support training).
 
 ### Select backend
 ```python
@@ -447,8 +477,13 @@ keras.utils.set_random_seed(42)  # seeds all backends
 
 ### Memory-efficient large models
 ```python
-# Gradient checkpointing (TF backend)
-model.compile(..., steps_per_execution=8)  # fuse steps
+# Step fusion (reduces per-step Python/dispatch overhead — NOT gradient checkpointing)
+model.compile(..., steps_per_execution=8)
+
+# Gradient checkpointing / rematerialization (Keras 3)
+with keras.RematScope(mode="activations"):  # modes: "full", "activations", "larger_than", "list_of_layers"
+    outputs = expensive_block(inputs)
+# or wrap a callable: checkpointed_fn = keras.remat(fn)
 
 # Keras 3
 keras.config.set_dtype_policy("mixed_bfloat16")  # better than float16 for training

@@ -26,7 +26,12 @@ ds = ray.data.read_parquet("s3://bucket/data/")
 ds = ray.data.read_json("data/*.json")
 ds = ray.data.read_csv("data.csv")
 ds = ray.data.read_images("s3://bucket/images/", mode="RGB")
-ds = ray.data.from_huggingface("imdb")
+
+# from_huggingface requires a datasets.Dataset/IterableDataset object,
+# not a string name (DatasetDict/IterableDatasetDict are unsupported)
+from datasets import load_dataset
+hf_ds = load_dataset("imdb", split="train")
+ds = ray.data.from_huggingface(hf_ds)
 
 ds.schema()   # Arrow schema
 ds.count()
@@ -72,7 +77,7 @@ ds = ds.map_batches(TokenizeUDF, concurrency=4, batch_size=512)
 
 | Param | Default | Purpose |
 |-------|---------|---------|
-| `batch_size` | 4096 | Rows per batch |
+| `batch_size` | `None` | Rows per batch; `None` uses whole blocks. Docs recommend `"auto"` or an explicit size (e.g. 1024) |
 | `concurrency` | auto | Parallel workers |
 | `num_gpus` | 0 | GPU per worker (for GPU transforms) |
 | `batch_format` | "default" | `"numpy"`, `"pandas"`, `"pyarrow"` |

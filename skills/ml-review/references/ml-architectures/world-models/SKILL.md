@@ -63,9 +63,12 @@ This is the same trick as BYOL and DINO, but JEPA additionally drops the augment
 | **I-JEPA** (Assran et al., CVPR 2023) | Images | Mask 4 large blocks (~15-20% of image each); context is a separate large block | First JEPA; competitive with MAE / DINO **without augmentations** |
 | **V-JEPA** (Bardes et al., 2024) | Video | Mask spacetime tubes (consistent across time) | Learns motion; strong on Kinetics-400, Something-Something v2 |
 | **V-JEPA 2** (Assran et al., 2025) | Video → action | Pretrained on ~1M h video; small action-conditioned predictor head fine-tuned on robot data | Action-conditioned latent rollouts → zero-shot robot planning. The bridge from JEPA to world models |
+| **V-JEPA 2.1** (Meta, 2026) | Video | Spacetime tubes; revised recipe | Released 2026-03-16; revised recipe learns high-quality, temporally consistent **dense** features — current-latest JEPA release |
 | **A-JEPA** (Fei et al., 2023) | Audio spectrograms | Curriculum mask of time-frequency patches | Same recipe on log-mel spectrograms |
 
 V-JEPA 2 is the inflection point: JEPA-style pretraining + a small action-conditioned predictor head → robot manipulation by planning in latent space. That's a JEPA encoder being used *as* a world model.
+
+V-JEPA 2.1 (released 2026-03-16, per the [`facebookresearch/vjepa2`](https://github.com/facebookresearch/vjepa2) README changelog) is the current-latest JEPA release: a revised training recipe that learns high-quality, temporally consistent **dense** features — prefer it when you need per-patch/per-frame representations rather than a single pooled embedding.
 
 ## Reference Implementation (Ray Train + DDP, runs on CIFAR-10)
 

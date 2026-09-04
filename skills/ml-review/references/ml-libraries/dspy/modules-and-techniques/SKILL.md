@@ -86,7 +86,7 @@ For tasks where context is too large for a single prompt:
 ```python
 rlm = dspy.RLM(
     signature,
-    max_iterations=20,    # REPL turns
+    max_iters=20,         # REPL turns
     max_llm_calls=50,     # sub-LM budget
     tools=[...],          # additional callables
 )
@@ -104,7 +104,7 @@ class AnalyzeChart(dspy.Signature):
     trend: str = dspy.OutputField()
 
 analyze = dspy.Predict(AnalyzeChart)
-analyze(chart=dspy.Image("chart.png"))  # Also: URL, bytes, PIL.Image
+analyze(chart=dspy.Image.from_path("chart.png"))  # Also: dspy.Image(url), bytes, PIL.Image
 ```
 
 Also: `dspy.Audio` for audio inputs.

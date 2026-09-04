@@ -403,7 +403,7 @@ Always evaluate hit-rate *and* answer-correctness offline before turning on. Man
 
 This is at the **inference engine** layer, not the app. vLLM and SGLang automatically cache the KV state of shared prompt prefixes (system prompt, few-shot examples, long shared context). For an app that re-uses the same 2k-token system prompt across users, prefix caching can drop TTFT 5-10x with zero correctness risk.
 
-You don't implement this — you turn it on. See ../../ml-libraries/vllm/ and ../../ml-libraries/sglang/ for `--enable-prefix-caching` and the matching APIs. Provider APIs (Anthropic prompt caching, OpenAI cached prompts) expose this with explicit headers.
+You don't implement this — you turn it on. See ../../ml-libraries/vllm/ and ../../ml-libraries/sglang/ for `--enable-prefix-caching` and the matching APIs. Provider APIs expose this too: OpenAI prompt caching is automatic (on by default for supported models, no code change), and Anthropic prompt caching is opt-in via `cache_control` breakpoints in the request body.
 
 ### Tool-Result Cache
 
@@ -451,24 +451,25 @@ A **trace** is the full execution record of one user request: every LLM call, to
 
 ```python
 # Langfuse decorator-based tracing (Phoenix and LangSmith follow similar shapes).
-# pip install langfuse
-from langfuse import Langfuse, observe
+# pip install langfuse  (v4+)
+from langfuse import observe, propagate_attributes, get_client
 from langfuse.openai import openai  # drop-in replacement; auto-instruments
 
-langfuse = Langfuse()  # reads LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY
+langfuse = get_client()  # reads LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY
 
 @observe()  # creates a parent span for the whole function
 def answer_question(user_id: str, query: str) -> str:
-    # User identity attaches to the trace for per-user dashboards.
-    langfuse.update_current_trace(user_id=user_id, tags=["prod", "v2.3.1"])
+    # v4: update_current_trace() was removed. Correlating attributes attach via
+    # the propagate_attributes() context manager and flow to every child span.
+    with propagate_attributes(user_id=user_id, tags=["prod", "v2.3.1"]):
+        context = retrieve(query)            # @observe()-decorated separately
+        response = generate(query, context)  # tracked OpenAI call below
+        score   = grade(response, context)   # AI-as-judge spam check
 
-    context = retrieve(query)            # @observe()-decorated separately
-    response = generate(query, context)  # tracked OpenAI call below
-    score   = grade(response, context)   # AI-as-judge spam check
-
-    langfuse.update_current_trace(
-        metadata={"groundedness": score, "ctx_chunks": len(context)}
-    )
+        # Computed metadata attaches to the current span (v4 metadata is dict[str, str]).
+        langfuse.update_current_span(
+            metadata={"groundedness": str(score), "ctx_chunks": str(len(context))}
+        )
     return response
 
 @observe()

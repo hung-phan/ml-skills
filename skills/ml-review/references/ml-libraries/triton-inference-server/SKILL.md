@@ -618,12 +618,13 @@ spec:
     spec:
       containers:
         - name: triton
-          image: nvcr.io/nvidia/tritonserver:24.05-py3
+          image: nvcr.io/nvidia/tritonserver:26.05-py3
           args:
             - tritonserver
             - --model-repository=s3://my-bucket/model_repository
             - --log-verbose=0
-            - --strict-model-config=false
+            # auto-complete-config is on by default in current Triton;
+            # use --disable-auto-complete-config to force full/manual config
           ports:
             - name: http
               containerPort: 8000
@@ -707,7 +708,7 @@ spec:
 # NVIDIA official Helm chart
 helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
 helm install triton nvidia/triton-inference-server \
-  --set image.tag=24.05-py3 \
+  --set image.tag=26.05-py3 \
   --set modelRepository.path=s3://my-bucket/model_repository \
   --set resources.limits.nvidia\\.com/gpu=1 \
   --set replicaCount=2

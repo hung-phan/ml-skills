@@ -40,7 +40,7 @@ lazy = df.lazy()
 eager = lazy.collect()
 
 # Stream large results (constant memory)
-lazy.collect(streaming=True)
+lazy.collect(engine="streaming")
 ```
 
 **Rule:** Default to lazy (`scan_*`) for files. Use eager only for small in-memory transforms.
@@ -109,8 +109,9 @@ df.group_by_dynamic("date", every="1d", period="7d").agg(
 df1.join(df2, on="id")
 df1.join(df2, left_on="user_id", right_on="id")
 
-# Left/right/outer/cross/semi/anti
+# Left/right/full/cross/semi/anti
 df1.join(df2, on="id", how="left")
+df1.join(df2, on="id", how="full")   # all rows from both sides
 df1.join(df2, on="id", how="anti")   # rows in df1 NOT in df2
 df1.join(df2, on="id", how="semi")   # rows in df1 that ARE in df2
 
@@ -164,7 +165,6 @@ df.with_columns(
     pl.col("full_name").str.split(" ").list.first().alias("first_name"),
     pl.col("code").str.starts_with("US-"),
     pl.col("tags").str.strip_chars(),
-    pl.col("a").str.concat(pl.col("b"), separator="-"),  # use pl.concat_str for multi
 )
 
 # concat_str for multiple columns
@@ -203,7 +203,7 @@ df.columns      # list of column names
 
 # Explicit schema on read
 pl.read_csv("f.csv", schema={"id": pl.Int64, "name": pl.Utf8, "val": pl.Float64})
-pl.scan_csv("f.csv", dtypes={"id": pl.Int64})
+pl.scan_csv("f.csv", schema_overrides={"id": pl.Int64})
 
 # Rename
 df.rename({"old_name": "new_name"})
@@ -229,7 +229,7 @@ lf = pl.scan_parquet("huge.parquet")
 lf = pl.scan_parquet("s3://bucket/data/**/*.parquet")  # glob
 
 # Streaming collect for out-of-memory
-result = lf.filter(...).select(...).collect(streaming=True)
+result = lf.filter(...).select(...).collect(engine="streaming")
 
 # Parquet: predicate pushdown reads only matching row groups
 lf = pl.scan_parquet("data.parquet").filter(pl.col("year") == 2024)
@@ -244,10 +244,9 @@ lf.filter(...).sink_csv("output.csv")
 # IPC/Arrow for fastest I/O
 pl.scan_ipc("data.arrow")
 
-# Chunked reads (manual)
-reader = pl.read_csv_batched("huge.csv", batch_size=100_000)
-while (batch := reader.next_batches(1)):
-    process(batch[0])
+# Chunked reads (streaming) -- collect_batches yields DataFrame chunks
+for df in pl.scan_csv("huge.csv").collect_batches(chunk_size=100_000):
+    process(df)
 ```
 
 ## Polars vs Pandas Translation
@@ -296,7 +295,7 @@ lf.explain(optimized=False)  # show unoptimized for comparison
 2. **Avoid `map_elements`** -- drops to Python, loses parallelism
 3. **Prefer expressions over Python UDFs** -- 10-100x faster
 4. **Use categoricals** for low-cardinality strings: `df.cast({"status": pl.Categorical})`
-5. **Use `streaming=True`** for datasets larger than RAM
+5. **Use `collect(engine="streaming")`** for datasets larger than RAM
 6. **Parquet > CSV** -- columnar, compressed, supports predicate pushdown
 7. **Pre-sort join keys** if joining repeatedly on same key
 8. **Use `sink_parquet`** instead of `collect()` + `write_parquet()` for large outputs
@@ -312,7 +311,7 @@ lf.explain(optimized=False)  # show unoptimized for comparison
     .filter(pl.col("status") == "active")
     .group_by("region")
     .agg(pl.col("revenue").sum())
-    .collect(streaming=True)
+    .collect(engine="streaming")
 )
 
 # Sink to avoid materializing

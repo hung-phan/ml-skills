@@ -172,7 +172,7 @@ trainer = GRPOTrainer(
 trainer.train()
 ```
 
-TRL ≥0.15 supports vLLM as generation backend natively.
+TRL (v1.x) supports vLLM as the generation backend natively, with two modes via `vllm_mode`: `"colocate"` (default, shares the training GPUs) and `"server"` (a dedicated vLLM server launched with `trl vllm-serve`, matching the separated inference/training topology this page advocates).
 
 TRL GRPO docs: https://huggingface.co/docs/trl/grpo_trainer
 
@@ -196,11 +196,12 @@ pip install verl
 
 # Hydra-based config
 python -m verl.trainer.main_ppo \
-  algorithm=grpo \
+  algorithm.adv_estimator=grpo \
   actor_rollout_ref.model.path=meta-llama/Llama-3.1-8B-Instruct \
   actor_rollout_ref.rollout.gpu_memory_utilization=0.7 \
   actor_rollout_ref.rollout.n=8 \
-  algorithm.kl_ctrl.kl_coef=0.04 \
+  actor_rollout_ref.actor.use_kl_loss=true \
+  actor_rollout_ref.actor.kl_loss_coef=0.001 \
   trainer.total_epochs=1 \
   trainer.save_path=./verl_output
 ```
@@ -320,4 +321,5 @@ https://github.com/OpenRLHF/OpenRLHF/tree/main/examples/scripts
 - GitHub (OpenRLHF): https://github.com/OpenRLHF/OpenRLHF
 - GitHub (veRL): https://github.com/volcengine/verl
 - GitHub (TRL): https://github.com/huggingface/trl
-- Paper (DeepSeek-R1 / GRPO): https://arxiv.org/abs/2402.03300
+- Paper (DeepSeekMath / GRPO): https://arxiv.org/abs/2402.03300
+- Paper (DeepSeek-R1): https://arxiv.org/abs/2501.12948

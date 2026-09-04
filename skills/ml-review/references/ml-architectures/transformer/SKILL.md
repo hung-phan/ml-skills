@@ -268,9 +268,19 @@ class CachedAttention(nn.Module):
 ```python
 from torch.nn.functional import scaled_dot_product_attention as sdpa
 
+# Full signature (PyTorch 2.x):
+# sdpa(query, key, value, attn_mask=None, dropout_p=0.0,
+#      is_causal=False, scale=None, enable_gqa=False)
 # Automatically uses Flash Attention when available (CUDA, bf16/fp16)
-out = sdpa(Q, K, V, attn_mask=mask, is_causal=True, dropout_p=0.0)
+
+# Causal decoder — let the kernel apply the causal mask (no attn_mask):
+out = sdpa(Q, K, V, is_causal=True, dropout_p=0.0)
+
+# Explicit mask (e.g. padding) — is_causal defaults to False:
+out = sdpa(Q, K, V, attn_mask=mask, dropout_p=0.0)
 ```
+
+**Use exactly one masking mechanism** — passing both a non-`None` `attn_mask` and `is_causal=True` raises an error.
 
 **Key properties:** O(N) memory vs O(N²), 2-4× faster, exact (not approximate).
 
@@ -285,7 +295,8 @@ out = sdpa(Q, K, V, attn_mask=mask, is_causal=True, dropout_p=0.0)
 | LLaMA 2 7B | Dec | 4096 | 32 | 32 | 4096 |
 | LLaMA 2 70B | Dec | 8192 | 64 | 80 | 4096 |
 | Mistral 7B | Dec | 4096 | 32 | 32 | 32K |
-| LLaMA 3 8B | Dec | 4096 | 32 | 32 | 128K |
+| LLaMA 3 8B | Dec | 4096 | 32 | 32 | 8K |
+| LLaMA 3.1 8B | Dec | 4096 | 32 | 32 | 128K |
 
 ---
 

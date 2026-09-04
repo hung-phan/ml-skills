@@ -131,8 +131,10 @@ Use a stronger model as judge than the target model. Cache judge calls — they'
 
 GEPA reads `feedback` verbatim in its reflection prompt — vague feedback = no improvement.
 
+**Signature**: Unlike MIPROv2/BootstrapFewShot (which use the 3-arg `(example, pred, trace=None)` metric), GEPA requires a 5-arg metric `(gold, pred, trace, pred_name, pred_trace)` and validates it at `dspy.GEPA(...)` construction — a metric that can't bind 5 positional args raises `TypeError`. Give the extra params defaults (`pred_name=None, pred_trace=None`); the metric still returns `dspy.Prediction(score, feedback)` (or a bare float).
+
 ```python
-def gepa_metric(example, pred, trace=None):
+def gepa_metric(example, pred, trace=None, pred_name=None, pred_trace=None):
     scores, issues = [], []
 
     accuracy = check_facts(pred.response, example.response)
@@ -161,7 +163,7 @@ def gepa_metric(example, pred, trace=None):
 ### Composite GEPA Pattern
 
 ```python
-def composite_metric(example, pred, trace=None):
+def composite_metric(example, pred, trace=None, pred_name=None, pred_trace=None):
     scores = {
         "accuracy": check_accuracy(example, pred),
         "format":   float(check_format(pred)),
@@ -180,6 +182,7 @@ def composite_metric(example, pred, trace=None):
 
 | Property | GEPA | MIPROv2 | BootstrapFewShot |
 |----------|------|---------|-----------------|
+| Signature | `(gold, pred, trace, pred_name, pred_trace)` (5-arg, validated at init) | `(example, pred, trace=None)` | `(example, pred, trace=None)` |
 | Return type | `Prediction(score, feedback)` | `float` | `bool` |
 | Feedback | **Critical** — drives mutations | Not used | Not used |
 | Granularity | Fine-grained required | Coarse OK | Pass/fail OK |
@@ -196,9 +199,12 @@ evaluator = dspy.Evaluate(
     failure_score=0.0,
     display_progress=True,
 )
-baseline = evaluator(module)
+# evaluator(...) returns an EvaluationResult (a dspy.Prediction subclass), NOT a float.
+# Read .score — it's a 0-100 percentage (e.g. 85.0), and .results holds
+# per-example (example, prediction, score) tuples.
+baseline = evaluator(module).score
 optimized = optimizer.compile(module, trainset=trainset)
-improved = evaluator(optimized)
+improved = evaluator(optimized).score
 print(f"{baseline:.2f} → {improved:.2f} ({(improved-baseline)/baseline*100:+.1f}%)")
 ```
 

@@ -249,6 +249,32 @@ layer = Mamba2(
 
 ---
 
+## Mamba-3: Improved Sequence Modeling using State Space Principles
+
+**Key insight:** The same authors extend SSD with three changes that make the recurrence more expressive while keeping O(N) cost.
+
+**Mamba-3 improvements:**
+- **Trapezoidal recurrence** — a more expressive discretization (trapezoidal rule rather than plain ZOH/Euler), improving how state is integrated across steps
+- **Complex-valued state update** — richer dynamics per state channel than a real-valued decay
+- **MIMO formulation** — a multi-input/multi-output state update (low-rank B/C) that raises arithmetic intensity so the kernel is better matched to modern GPUs
+
+```python
+from mamba_ssm import Mamba3
+
+layer = Mamba3(
+    d_model=2048,
+    d_state=128,
+    headdim=64,
+    is_mimo=True,      # multi-input/multi-output state update
+    mimo_rank=4,       # rank of the MIMO B/C projections
+    chunk_size=16,     # chunk length for the scan
+)
+```
+
+As of now the state-spaces HF org lists only `mamba-*` and `mamba2-*` checkpoints — no `mamba3-*` pretrained weights yet.
+
+---
+
 ## Hybrid Architectures: Jamba (Mamba + Attention)
 
 AI21's Jamba interleaves Mamba and Attention layers:
@@ -306,10 +332,15 @@ Pattern: [Mamba] × 5 → [Attention + MoE] × 1  (repeat)
 ### Installation
 
 ```bash
-pip install mamba-ssm  # requires CUDA, triton
+pip install mamba-ssm --no-build-isolation
+# --no-build-isolation reuses your CUDA-enabled PyTorch instead of pulling CPU-only torch
+# Optional causal-conv1d accelerator:
+pip install "mamba-ssm[causal-conv1d]" --no-build-isolation
 # or from source:
 pip install git+https://github.com/state-spaces/mamba.git
 ```
+
+**Note:** the fast CUDA selective-scan kernel is now opt-in — set `MAMBA_KEEP_CUDA_BUILD=TRUE` before installing to compile it, otherwise mamba-ssm uses a slower fallback.
 
 ### Inference (Generation)
 
@@ -429,6 +460,7 @@ model = get_peft_model(model, config)
 
 - [Mamba paper](https://arxiv.org/abs/2312.00752) — Gu & Dao, 2023
 - [Mamba-2 (SSD)](https://arxiv.org/abs/2405.21060) — Dao & Gu, 2024
+- [Mamba-3](https://arxiv.org/abs/2603.15569) — Lahoti, Li, ..., Dao & Gu, ICLR 2026
 - [S4 paper](https://arxiv.org/abs/2111.00396) — Gu et al., 2021
 - [Jamba](https://arxiv.org/abs/2403.19887) — AI21 Labs, 2024
 - [state-spaces/mamba](https://github.com/state-spaces/mamba) — reference implementation

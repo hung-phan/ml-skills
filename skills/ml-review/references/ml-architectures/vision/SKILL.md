@@ -1,6 +1,6 @@
 ---
 name: vision
-description: Vision transformer architectures (ViT, Swin, DeiT), CLIP, SAM, DINOv2, MAE, DETR, YOLOv8, plus transfer learning, timm/HuggingFace usage, and a task-selection guide. Use when picking a pretrained backbone for classification, detection, or segmentation, or fine-tuning ViT-family models.
+description: Vision transformer architectures (ViT, Swin, DeiT), CLIP, SAM/SAM2, DINOv2/DINOv3, MAE, DETR, YOLO11, plus transfer learning, timm/HuggingFace usage, and a task-selection guide. Use when picking a pretrained backbone for classification, detection, or segmentation, or fine-tuning ViT-family models.
 ---
 
 ## Why This Exists
@@ -9,7 +9,7 @@ description: Vision transformer architectures (ViT, Swin, DeiT), CLIP, SAM, DINO
 
 **Key insight**: Vision Transformers treat images as sequences of patches, enabling the same self-attention mechanism from NLP to learn visual features — combined with large-scale pretraining (supervised, contrastive, or self-supervised), these models transfer to virtually any vision task with minimal adaptation.
 
-**Reach for this when**: You need a pretrained visual backbone (DINOv2, CLIP), zero-shot classification (CLIP), real-time detection (YOLOv8), interactive segmentation (SAM), or high-accuracy dense prediction (Swin). Choose by task requirements: speed → YOLO, versatility → CLIP, accuracy → Swin/DINOv2, segmentation → SAM.
+**Reach for this when**: You need a pretrained visual backbone (DINOv2, CLIP), zero-shot classification (CLIP), real-time detection (YOLO11), interactive segmentation (SAM 2), or high-accuracy dense prediction (Swin). Choose by task requirements: speed → YOLO, versatility → CLIP, accuracy → Swin/DINOv2, segmentation → SAM.
 
 
 # Vision Models Skill
@@ -22,11 +22,12 @@ description: Vision transformer architectures (ViT, Swin, DeiT), CLIP, SAM, DINO
 | DeiT | Classification | ViT + distillation token + data-efficient training | Classification without massive datasets |
 | Swin | Hierarchical | Shifted windows + multi-scale features | Dense prediction, detection, segmentation |
 | CLIP | Vision-Language | Contrastive image-text pretraining | Zero-shot classification, retrieval, embeddings |
-| SAM | Segmentation | Promptable segmentation (points/boxes/text) | Interactive/automatic segmentation |
-| DINO/DINOv2 | Self-supervised | Self-distillation, no labels needed | Feature extraction, retrieval, zero-shot |
+| SAM / SAM 2 | Segmentation | Promptable segmentation (points/boxes/text); SAM 2 is faster and now the default | Interactive/automatic segmentation |
+| SAM 2 (video) | Segmentation | Prompt masks propagated across video frames | Video object segmentation & tracking |
+| DINO / DINOv2 / DINOv3 | Self-supervised | Self-distillation, no labels needed | Feature extraction, retrieval, zero-shot |
 | MAE | Self-supervised | Masked patch reconstruction (75% masking) | Pretraining, representation learning |
 | DETR | Detection | End-to-end detection with transformers, no NMS/anchors | Object detection without post-processing |
-| YOLOv8 | Detection | Real-time CNN detection + segmentation | Real-time inference, edge deployment |
+| YOLO11 / YOLO26 | Detection | Real-time CNN detection + segmentation | Real-time inference, edge deployment |
 
 ## Task Selection Guide
 
@@ -37,16 +38,17 @@ What's your task?
 │   ├── Limited data? → DeiT (distillation), DINO fine-tune
 │   └── Zero-shot (no training)? → CLIP
 ├── Object Detection (boxes around objects)
-│   ├── Real-time needed? → YOLOv8 (ultralytics)
+│   ├── Real-time needed? → YOLO11 (ultralytics)
 │   ├── High accuracy, latency OK? → DETR, DINO-DETR
 │   └── Custom classes, few examples? → Grounding DINO + CLIP
 ├── Segmentation
 │   ├── Semantic (pixel classes)? → Swin + UperNet, SegFormer
-│   ├── Instance (separate objects)? → Mask R-CNN, YOLOv8-seg
-│   ├── Interactive/promptable? → SAM
+│   ├── Instance (separate objects)? → Mask R-CNN, YOLO11-seg
+│   ├── Interactive/promptable? → SAM 2 (SAM 2.1)
+│   ├── Video (track objects across frames)? → SAM 2
 │   └── Panoptic? → Mask2Former
 ├── Feature Extraction / Embeddings
-│   ├── General visual features? → DINOv2
+│   ├── General visual features? → DINOv3 (or DINOv2)
 │   ├── Image-text aligned? → CLIP
 │   └── Self-supervised pretrain? → MAE → fine-tune
 └── Zero-Shot / Open Vocabulary
@@ -89,9 +91,33 @@ image_features = model.get_image_features(**processor(images=image, return_tenso
 image_features = image_features / image_features.norm(dim=-1, keepdim=True)  # L2 normalize
 ```
 
-### SAM (Segment Anything)
+### SAM 2 / SAM (Segment Anything)
+
+SAM 2 (July 2024; SAM 2.1 Sept 2024) is the current default — faster than SAM on images and adds video segmentation. The original SAM code below still works.
 
 ```python
+# SAM 2 on images (pip install "git+https://github.com/facebookresearch/sam2.git")
+from sam2.sam2_image_predictor import SAM2ImagePredictor
+
+predictor = SAM2ImagePredictor.from_pretrained("facebook/sam2-hiera-large")
+predictor.set_image(image_rgb)
+masks, scores, logits = predictor.predict(
+    point_coords=np.array([[500, 375]]),
+    point_labels=np.array([1]),  # 1=foreground, 0=background
+    multimask_output=True,
+)
+
+# SAM 2 video segmentation (prompt once, propagate across frames)
+from sam2.build_sam import build_sam2_video_predictor
+
+video_predictor = build_sam2_video_predictor(
+    "configs/sam2.1/sam2.1_hiera_l.yaml", "sam2.1_hiera_large.pt"
+)
+state = video_predictor.init_state(video_path="frames/")
+```
+
+```python
+# SAM v1 (original package) — still supported
 from segment_anything import sam_model_registry, SamPredictor, SamAutomaticMaskGenerator
 
 sam = sam_model_registry["vit_h"](checkpoint="sam_vit_h.pth")
@@ -110,11 +136,26 @@ generator = SamAutomaticMaskGenerator(sam)
 masks = generator.generate(image_rgb)
 ```
 
-### DINOv2
+### DINOv3 / DINOv2
+
+DINOv3 (Aug 2025) is the current recommendation for general self-supervised visual features (ViT-S/16 through ViT-7B/16 plus ConvNeXt variants, trained on LVD-1689M web + SAT-493M satellite data), available via PyTorch Hub and HuggingFace Transformers (>=4.56.0). DINOv2 remains a valid, lighter-weight option.
 
 ```python
 import torch
 
+# DINOv3 (weights are license-gated on the repo)
+model = torch.hub.load('facebookresearch/dinov3', 'dinov3_vitb16')
+# or via HuggingFace Transformers (>=4.56.0):
+#   from transformers import AutoModel; AutoModel.from_pretrained(<dinov3-repo-id>)
+model.eval()
+with torch.no_grad():
+    features = model(images)
+```
+
+```python
+import torch
+
+# DINOv2 (still valid)
 model = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitb14')
 model.eval()
 
@@ -127,17 +168,19 @@ classifier = torch.nn.Linear(768, num_classes)
 output = classifier(model(images))
 ```
 
-### YOLOv8 (Ultralytics)
+### YOLO11 / YOLO26 (Ultralytics)
+
+The Ultralytics `YOLO()` API is unchanged across versions — swap the weight file to move generations. YOLO11 (Sept 2024) is the current stable line; YOLO26 (announced Sept 2025) is the flagship.
 
 ```python
 from ultralytics import YOLO
 
-model = YOLO("yolov8n.pt")
+model = YOLO("yolo11n.pt")  # or "yolo26n.pt" (latest)
 results = model("image.jpg")
 boxes = results[0].boxes  # .xyxy, .conf, .cls
 
 # Training on custom dataset
-model = YOLO("yolov8n.pt")
+model = YOLO("yolo11n.pt")
 model.train(data="dataset.yaml", epochs=100, imgsz=640, batch=16)
 
 # Export
@@ -221,14 +264,14 @@ result = zs("image.jpg", candidate_labels=["dog", "cat", "bird"])
 | Decision | Recommendation |
 |----------|---------------|
 | Backbone for classification | ViT-B or Swin-B (timm) |
-| Backbone for detection | Swin + DINO-DETR or YOLOv8 |
-| Need real-time? | YOLOv8 (ultralytics) |
-| No labeled data? | CLIP zero-shot or DINOv2 linear probe |
-| Self-supervised pretrain? | MAE or DINOv2 |
-| Interactive segmentation? | SAM |
+| Backbone for detection | Swin + DINO-DETR or YOLO11 |
+| Need real-time? | YOLO11 (ultralytics) |
+| No labeled data? | CLIP zero-shot or DINOv3/DINOv2 linear probe |
+| Self-supervised pretrain? | MAE or DINOv3/DINOv2 |
+| Interactive segmentation? | SAM 2 (SAM 2.1) |
 | Open-vocabulary detection? | Grounding DINO |
 | Production deployment? | ONNX export + TensorRT |
-| Limited compute? | DeiT-S, EfficientNet, YOLOv8-n |
+| Limited compute? | DeiT-S, EfficientNet, YOLO11n |
 | Maximum accuracy? | Swin-L, ViT-H, BEiT-3 |
 
 ---

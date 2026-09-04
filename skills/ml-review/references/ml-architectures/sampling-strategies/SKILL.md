@@ -14,7 +14,7 @@ description: How autoregressive LMs pick next tokens — temperature, top-k/top-
 **Reach for this when**:
 - Debugging hallucinations or factual errors that look "made up" → lower temperature, lower top-p, or use logprobs to detect low-confidence tokens
 - Reducing variance in evaluation runs → `T=0` or `seed=...` for reproducibility
-- Enforcing JSON / regex / grammar output → constrained sampling (outlines, xgrammar, vLLM `guided_decoding`)
+- Enforcing JSON / regex / grammar output → constrained sampling (outlines, xgrammar, vLLM `structured_outputs`)
 - Getting better creative writing or brainstorming → `T=0.8–1.0` with `top_p=0.95`, possibly with repetition penalty
 - Improving reasoning accuracy → self-consistency (sample N CoTs, majority-vote)
 - Building a classifier from a generative LM → read logprobs of the answer tokens, no fine-tune needed
@@ -183,7 +183,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 tok = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
 model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.1-8B-Instruct",
-                                             device_map="auto", torch_dtype="bfloat16")
+                                             device_map="auto", dtype="bfloat16")
 
 inputs = tok("The capital of France is", return_tensors="pt").to(model.device)
 out = model.generate(
@@ -279,11 +279,11 @@ Three levels of strictness:
 2. **JSON schema / Pydantic**: enforces field names, types, enums.
 3. **Regex / CFG**: arbitrary formats — phone numbers, SQL, custom DSLs.
 
-### vLLM with guided decoding
+### vLLM with structured outputs
 
 ```python
 from vllm import LLM, SamplingParams
-from vllm.sampling_params import GuidedDecodingParams
+from vllm.sampling_params import StructuredOutputsParams
 
 llm = LLM(model="meta-llama/Llama-3.1-8B-Instruct")
 
@@ -300,13 +300,13 @@ schema = {
 params = SamplingParams(
     temperature=0.0,
     max_tokens=200,
-    guided_decoding=GuidedDecodingParams(json=schema),
+    structured_outputs=StructuredOutputsParams(json=schema),
 )
 out = llm.generate(["Extract user info: 'Alice, 30, alice@example.com'"], params)
 print(out[0].outputs[0].text)  # always valid against schema
 ```
 
-vLLM supports `GuidedDecodingParams(json=..., regex=..., choice=[...], grammar=...)` and uses xgrammar / outlines / lm-format-enforcer as backends. See the `../../ml-libraries/vllm/` skill for engine config.
+vLLM supports `StructuredOutputsParams(json=..., regex=..., choice=[...], grammar=..., structural_tag=...)` and uses xgrammar (default) / guidance / outlines as backends. The legacy `guided_decoding` / `GuidedDecodingParams` API was removed in vLLM v0.12.0. See the `../../ml-libraries/vllm/` skill for engine config.
 
 ### When constrained sampling is **lossy**
 
@@ -351,7 +351,7 @@ This is a serving-time optimization, not a sampling-strategy choice. See `../../
 | Factual QA | 0–0.2 | 1.0 | — | — | — | seed for reproducibility |
 | Code generation | 0.1–0.3 | 0.95 | — | — | — | stop on language fence |
 | Function-call args | 0 | — | — | — | — | constrained JSON schema |
-| JSON extraction | 0 | — | — | — | **none** | guided_decoding |
+| JSON extraction | 0 | — | — | — | **none** | structured_outputs |
 | Classification (gen LM) | n/a — read logprobs | — | — | — | — | argmax label tokens |
 | Math (single-shot) | 0–0.3 | 0.95 | — | — | — | + CoT prompt |
 | Math (self-consistency) | 0.7 | 0.95 | — | — | — | N=10–40, vote |
@@ -373,7 +373,7 @@ tok = AutoTokenizer.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
 model = AutoModelForCausalLM.from_pretrained(
     "meta-llama/Llama-3.1-8B-Instruct",
     device_map="auto",
-    torch_dtype=torch.bfloat16,
+    dtype=torch.bfloat16,
 )
 
 prompt = tok.apply_chat_template(
@@ -419,7 +419,7 @@ print("avg logprob:", sum(lps) / len(lps))
 
 ```python
 from vllm import LLM, SamplingParams
-from vllm.sampling_params import GuidedDecodingParams
+from vllm.sampling_params import StructuredOutputsParams
 
 llm = LLM(model="meta-llama/Llama-3.1-8B-Instruct", dtype="bfloat16",
           gpu_memory_utilization=0.9)
@@ -439,7 +439,7 @@ schema = {"type": "object",
                          "population": {"type": "integer"}},
           "required": ["city", "population"]}
 struct = SamplingParams(temperature=0, max_tokens=200,
-                        guided_decoding=GuidedDecodingParams(json=schema))
+                        structured_outputs=StructuredOutputsParams(json=schema))
 
 # Logprobs (top-K per position)
 lp = SamplingParams(temperature=0, max_tokens=10, logprobs=20, prompt_logprobs=1)
@@ -456,10 +456,10 @@ for out in outputs[0].outputs:
 1. **Hallucinations on factual queries** → temperature too high. Drop to 0.0–0.3, drop top_p to 0.9.
 2. **Boring, repetitive output** → temperature too low or beam search. Raise to 0.7+, drop beam.
 3. **Model never terminates** → wrong / missing `eos_token_id`. Inspect tokenizer's chat template.
-4. **JSON parse failures** → repetition penalty applied. Set to 1.0; consider `guided_decoding`.
+4. **JSON parse failures** → repetition penalty applied. Set to 1.0; consider `structured_outputs`.
 5. **Self-consistency doesn't help** → `temperature=0` so all samples identical. Use `T≥0.5`.
 6. **Different outputs on same `T=0` input** → hardware drift (different GPU, batch size, kernel). Pin `seed` *and* hardware *and* batch composition. For strict reproducibility, single-batch + fixed seed + same GPU class.
-7. **Logprobs look uniform / random** → check you're decoding the right tokens. HF `output_scores` gives logits *before* warpers, not after; pass `output_logits=True` (newer API) or apply your own log_softmax.
+7. **Logprobs look uniform / random** → check you're decoding the right tokens. HF `output_scores` gives the *processed* scores (after temperature / top-k / top-p warpers, so masked tokens are -inf). To get the raw unprocessed logits (before warpers) use `output_logits=True`, then apply your own `log_softmax`.
 8. **Constrained sampling produces wrong answers** → schema forbade the model's preferred path. Add an "unknown" / "abstain" branch to the grammar.
 
 ## See Also
@@ -476,7 +476,8 @@ for out in outputs[0].outputs:
 
 - HuggingFace `GenerationConfig` API: https://huggingface.co/docs/transformers/main/en/main_classes/text_generation
 - HuggingFace blog, "How to generate text" (Patrick von Platen): https://huggingface.co/blog/how-to-generate
-- vLLM API reference (SamplingParams, GuidedDecodingParams): https://docs.vllm.ai/en/latest/api/
+- vLLM API reference (SamplingParams, StructuredOutputsParams): https://docs.vllm.ai/en/latest/api/
+- vLLM structured outputs guide: https://docs.vllm.ai/en/latest/features/structured_outputs.html
 - Holtzman et al. 2019, "The Curious Case of Neural Text Degeneration" (top-p / nucleus): https://arxiv.org/abs/1904.09751
 - Meister et al. 2022, "Locally Typical Sampling": https://arxiv.org/abs/2202.00666
 - Nguyen et al. 2024, "Min-p Sampling": https://arxiv.org/abs/2407.01082

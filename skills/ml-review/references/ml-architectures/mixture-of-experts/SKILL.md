@@ -133,6 +133,23 @@ aux_loss = alpha * num_experts * sum(f_i * P_i for i in range(num_experts))
 
 This encourages uniform routing: if expert i gets too many tokens (high f_i), the loss pushes P_i down.
 
+### Auxiliary-Loss-Free Balancing (DeepSeek-V3)
+DeepSeek-V3 drops the token-load auxiliary loss entirely. Instead, each expert has a learned bias term added to its routing score only for top-K selection (not for the gating weights). The bias is nudged up for under-loaded experts and down for over-loaded ones after each step, so balance is enforced without injecting gradients that interfere with the language-modeling objective.
+
+```python
+# Selection uses score + bias; the gate weight itself stays unbiased.
+select_logits = logits + expert_bias        # bias steers top-K only
+_, indices = torch.topk(select_logits, top_k, dim=-1)
+weights = F.softmax(logits.gather(-1, indices), dim=-1)
+
+# After the step, adjust bias from observed load (no gradient).
+with torch.no_grad():
+    load = count_tokens_per_expert(indices)          # (num_experts,)
+    expert_bias += bias_lr * (load.mean() - load).sign()
+```
+
+This bias-based approach avoids the quality tax of aux-loss gradients and is now the default in DeepSeek-V3 and adopted by Qwen3-MoE. See arXiv:2412.19437.
+
 ### Capacity Factor
 Hard cap on tokens per expert per batch. Overflow tokens are dropped or sent to a shared expert.
 
@@ -141,12 +158,14 @@ capacity = (tokens_per_batch / num_experts) * capacity_factor
 # capacity_factor typically 1.0-1.5
 ```
 
-### Z-Loss (DeepSeek)
+### Router Z-Loss (ST-MoE, Zoph et al. 2022)
 Penalizes large router logits to prevent routing collapse:
 
 ```python
 z_loss = beta * torch.mean(torch.logsumexp(logits, dim=-1) ** 2)
 ```
+
+DeepSeek-V2 does not use z-loss; it balances with expert-, device-, and communication-level auxiliary losses instead.
 
 ### Shared Expert (DeepSeek-V2)
 One or more experts always activated for every token (dense path), remaining experts sparse-routed. Ensures baseline quality even with routing failures.
@@ -229,7 +248,7 @@ class MoELayer(nn.Module):
 - 47B total params, 13B active per token
 - Matches/beats Llama 2 70B at 6x less inference compute
 - Every layer is MoE (no dense layers)
-- Sliding window attention (4096 tokens)
+- 32K context length (max_position_embeddings=32768); sliding-window attention is disabled (sliding_window=null) — SWA was a Mistral 7B feature, not Mixtral 8x7B
 - Paper: https://arxiv.org/abs/2401.04088
 
 ### DeepSeek-V2 (2024)
@@ -237,8 +256,15 @@ class MoELayer(nn.Module):
 - Multi-head Latent Attention (MLA) + DeepSeekMoE
 - 2 shared experts + 160 routed experts, top-6 routing
 - Device-limited routing: restrict expert selection to same GPU
-- 42.5x cheaper than DeepSeek 67B at higher quality
+- Saves 42.5% of training cost vs DeepSeek 67B, cuts KV cache by 93.3%, and boosts max generation throughput to 5.76x
 - Paper: https://arxiv.org/abs/2405.04434
+
+### DeepSeek-V3 (2024)
+- 671B total params, 37B active per token
+- 256 routed experts + 1 shared expert, top-8 routing
+- Auxiliary-loss-free load balancing via per-expert bias (no aux-loss gradient) — now the reference-class approach
+- MLA + DeepSeekMoE, trained on 14.8T tokens
+- Paper: https://arxiv.org/abs/2412.19437
 
 ### Architecture Comparison
 
@@ -247,7 +273,8 @@ class MoELayer(nn.Module):
 | Switch-Base | 7.4B | 0.2B | 128 | 1 | Simplified routing |
 | Mixtral 8x7B | 47B | 13B | 8 | 2 | Every layer MoE |
 | DeepSeek-V2 | 236B | 21B | 2+160 | 6 | Shared + routed experts |
-| Grok-1 | 314B | ~86B | 8 | 2 | xAI, top-2 |
+| DeepSeek-V3 | 671B | 37B | 1+256 | 8 | Aux-loss-free balancing |
+| Grok-1 | 314B | ~78.5B | 8 | 2 | xAI, top-2 (25% active/token) |
 
 ---
 
@@ -297,6 +324,7 @@ class MoELayer(nn.Module):
 - [Mixtral of Experts](https://arxiv.org/abs/2401.04088) — Jiang et al., 2024
 - [Mixtral 8x7B (HuggingFace model card)](https://huggingface.co/mistralai/Mixtral-8x7B-v0.1) — weights, config, usage
 - [DeepSeek-V2: A Strong, Economical, and Efficient MoE Language Model](https://arxiv.org/abs/2405.04434) — DeepSeek-AI, 2024
+- [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437) — DeepSeek-AI, 2024 (auxiliary-loss-free load balancing)
 - [DeepSeek-MoE: Towards Ultimate Expert Specialization](https://arxiv.org/abs/2401.06066) — DeepSeek-AI, 2024
 - [Outrageously Large Neural Networks: The Sparsely-Gated MoE Layer](https://arxiv.org/abs/1701.06538) — Shazeer et al., 2017 (original MoE routing paper)
 - [GShard: Scaling Giant Models with Conditional Computation](https://arxiv.org/abs/2006.16668) — Lepikhin et al., 2020

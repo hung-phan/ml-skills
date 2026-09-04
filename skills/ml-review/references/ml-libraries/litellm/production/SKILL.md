@@ -7,7 +7,7 @@ description: Production litellm configuration — shared aiohttp session for con
 
 ## Why This Exists
 
-**Problem**: LiteLLM's defaults (new HTTP session per request, no caching, no tracing) cause TCP churn, file-descriptor exhaustion, high P99 latency, and silent cost overruns when running at production scale.
+**Problem**: LiteLLM's defaults (no explicit control over the shared HTTP connection pool / no deterministic session cleanup, no caching, no tracing) cause TCP churn, file-descriptor exhaustion, high P99 latency, and silent cost overruns when running at production scale.
 
 **Key insight**: Three settings — a shared `aiohttp` session, a response cache, and OTel callbacks — eliminate the most common production failure modes with minimal configuration.
 
@@ -25,7 +25,7 @@ description: Production litellm configuration — shared aiohttp session for con
 
 ## Shared aiohttp Session (Connection Pooling)
 
-litellm creates a new `aiohttp.ClientSession` per request by default → TCP churn, FD exhaustion, high P99. Override with one shared session:
+By default litellm lazily creates a single shared `aiohttp.ClientSession` (the module-level `base_llm_aiohttp_handler` singleton; aiohttp is now the default transport). That default applies the built-in connector limits but you cannot size the pool per your workload or deterministically close it on shutdown. Override it with your own session to set explicit connector limits and guarantee cleanup:
 
 ```python
 import aiohttp

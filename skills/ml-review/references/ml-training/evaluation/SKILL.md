@@ -383,7 +383,7 @@ from imblearn.over_sampling import SMOTE
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_validate
-from sklearn.metrics import make_scorer, f1_score, roc_auc_score, average_precision_score
+from sklearn.metrics import roc_auc_score, average_precision_score
 import numpy as np
 
 # Build imbalanced-learn pipeline (sampling happens inside CV correctly)
@@ -394,11 +394,13 @@ pipeline = ImbPipeline([
                                     random_state=42))
 ])
 
-# Define scoring
+# Define scoring — use built-in predefined scorer names (version-robust).
+# make_scorer's needs_proba/needs_threshold were removed in scikit-learn 1.4+;
+# use response_method='predict_proba' if you need a custom probability scorer.
 scoring = {
-    'f1': make_scorer(f1_score),
-    'roc_auc': make_scorer(roc_auc_score, needs_proba=True),
-    'pr_auc': make_scorer(average_precision_score, needs_proba=True),
+    'f1': 'f1',
+    'roc_auc': 'roc_auc',
+    'pr_auc': 'average_precision',
 }
 
 # Stratified CV preserves class ratio in each fold

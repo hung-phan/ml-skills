@@ -149,6 +149,8 @@ def syncify(program: Module, in_place: bool = True) -> Module:
     return SyncWrapper(program)
 ```
 
+**Note**: DSPy ships a built-in `dspy.syncify(program, in_place=True)` with the same signature, but its `run_async` uses `asyncio.run()`/`nest_asyncio` — it creates a fresh event loop per call and cannot reuse persistent async connection pools across DSPy's threaded optimizer workers. This module's `syncify` routes through the singleton `BackgroundEventLoop` instead, which is why we keep a custom version. Use `dspy.syncify` if you don't need a shared background loop.
+
 ## TrainingTemplate ABC
 
 ```python

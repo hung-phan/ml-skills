@@ -115,6 +115,8 @@ When the model doesn't fit in one GPU's memory. Shards parameters, gradients, AN
 
 For a 7B model with AdamW (mixed precision): DDP needs ~56GB/GPU, FSDP with 8 GPUs needs ~7GB/GPU for params+optimizer.
 
+**FSDP1 (`FullyShardedDataParallel`) example:**
+
 ```python
 import torch
 from torch.distributed.fsdp import (
@@ -168,6 +170,47 @@ def train_fsdp(rank, world_size):
 - `NO_SHARD`: Equivalent to DDP (for debugging)
 - `HYBRID_SHARD`: Full shard within node, replicate across nodes
 
+### FSDP2 (`fully_shard`)
+
+Introduced as a prototype in PyTorch 2.4, `fully_shard` is the newer per-parameter-sharding API and the one PyTorch now recommends — the docs advise migrating FSDP1 → FSDP2. FSDP1 is **not** deprecated and the example above still works, but FSDP2 is the forward-looking path.
+
+Key differences from FSDP1:
+- **Per-parameter DTensor sharding** on dim-0 (vs FSDP1's flat-parameter approach that concatenates a module's params into one buffer), giving cleaner state dicts and easier composition with tensor parallelism.
+- **More deterministic memory**: no `record_stream`, no `limit_all_gathers` heuristic — memory behavior is predictable.
+- Applied by calling `fully_shard(module, mesh=...)` on each block, then the root, rather than wrapping the model in a class.
+
+```python
+import torch
+from torch.distributed.device_mesh import init_device_mesh
+from torch.distributed.fsdp import fully_shard, MixedPrecisionPolicy
+
+def train_fsdp2(rank, world_size):
+    dist.init_process_group("nccl", rank=rank, world_size=world_size)
+    torch.cuda.set_device(rank)
+
+    mesh = init_device_mesh("cuda", (world_size,))
+    model = MyTransformer().to(rank)
+
+    mp_policy = MixedPrecisionPolicy(
+        param_dtype=torch.bfloat16,
+        reduce_dtype=torch.bfloat16,
+    )
+
+    # Shard each transformer block, then the root module
+    for block in model.layers:
+        fully_shard(block, mesh=mesh, mp_policy=mp_policy)
+    fully_shard(model, mesh=mesh, mp_policy=mp_policy)
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
+
+    for batch in loader:
+        batch = batch.to(rank)
+        loss = model(batch).sum()
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+```
+
 ---
 
 ## 4 · Pipeline Parallelism (PP)
@@ -187,7 +230,7 @@ Split model layers across GPUs sequentially. GPU 0 runs layers 0-11, GPU 1 runs 
 - Combined with TP within nodes
 
 ```python
-# PyTorch PipelineStage API (torch >= 2.2)
+# PyTorch pipelining API (torch.distributed.pipelining, torch >= 2.4; still prototype/alpha)
 from torch.distributed.pipelining import SplitPoint, pipeline, ScheduleGPipe
 
 # Define split points
@@ -285,7 +328,7 @@ parallelize_module(
 1. **DDP + DataLoader:** Always use `DistributedSampler` and call `sampler.set_epoch(epoch)` — otherwise every rank trains on the same data order each epoch
 2. **FSDP checkpoint saving:** Use `FullStateDictConfig(offload_to_cpu=True)` or `ShardedStateDictConfig` — naive `model.state_dict()` on FSDP returns sharded tensors
 3. **Mixed precision + FSDP:** Set `reduce_dtype` to match `param_dtype` — mismatched precision causes silent accuracy loss
-4. **NCCL timeout:** Set `NCCL_TIMEOUT=1800` for large models — default 30min can be too short for first all-gather
+4. **NCCL timeout:** The NCCL backend's default collective timeout is 10 minutes, which can be too short for the first all-gather on large models. Increase it via `init_process_group("nccl", timeout=timedelta(minutes=30))`, and set `TORCH_NCCL_BLOCKING_WAIT=1` to enforce the timeout synchronously. There is no `NCCL_TIMEOUT` env var — PyTorch does not read one for the process-group timeout
 5. **Gradient accumulation with FSDP:** Use `model.no_sync()` context manager for accumulation steps to avoid unnecessary all-reduces
 6. **TP requires even division:** Hidden dimensions must be divisible by TP degree (e.g., 4096 / 8 = 512 ✓)
 7. **Pipeline bubble:** With N stages and M micro-batches, bubble fraction ≈ (N-1)/(N-1+M). Use M >> N to minimize
@@ -310,4 +353,4 @@ parallelize_module(
 - Official docs (PyTorch distributed): https://pytorch.org/docs/stable/distributed.html
 - Official docs (FSDP): https://pytorch.org/docs/stable/fsdp.html
 - Paper (ZeRO): https://arxiv.org/abs/1910.02054
-- GitHub (DeepSpeed): https://github.com/microsoft/DeepSpeed
+- GitHub (DeepSpeed): https://github.com/deepspeedai/DeepSpeed

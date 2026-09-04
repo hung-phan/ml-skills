@@ -1,11 +1,11 @@
 ---
 name: unsloth-sft
-description: Fine-tune LLMs with Unsloth for 2x speed and 60% less VRAM using LoRA/QLoRA. Covers Alpaca, ShareGPT, and chat template datasets on single GPU. Use when fine-tuning Llama/Qwen/Gemma/Mistral/Phi models, need fast iteration, or working with consumer GPUs (RTX 3090/4090, T4, L4, A100).
+description: Fine-tune LLMs with Unsloth for 2x speed and 70% less VRAM using LoRA/QLoRA. Covers Alpaca, ShareGPT, and chat template datasets on single or multi GPU. Use when fine-tuning Llama/Qwen/Gemma/Mistral/Phi models, need fast iteration, or working with consumer GPUs (RTX 3090/4090, T4, L4, A100).
 ---
 
 # Unsloth SFT (Supervised Fine-Tuning)
 
-Single-GPU fine-tuning with 2x speed and 70% less VRAM via custom Triton kernels. No accuracy loss.
+Fast LoRA/QLoRA fine-tuning with 2x speed and 70% less VRAM via custom Triton kernels. No accuracy loss. Runs on a single GPU, with multi-GPU (FSDP/DDP) now supported via Accelerate/DeepSpeed.
 
 - **Repo**: https://github.com/unslothai/unsloth
 - **Docs**: https://docs.unsloth.ai
@@ -19,7 +19,7 @@ Single-GPU fine-tuning with 2x speed and 70% less VRAM via custom Triton kernels
 
 **Key insight**: Replacing attention and cross-entropy kernels with hand-written Triton kernels eliminates redundant memory reads/writes, giving 2x throughput and 60–70% less VRAM with no accuracy trade-off.
 
-**Reach for this when**: Fine-tuning any Llama/Qwen/Gemma/Mistral/Phi model on a single GPU (T4, L4, RTX 3090/4090, A100). Switch to `ray-distributed-sft` when you need multi-GPU/multi-node, or `distributed-grpo` when you need RL alignment at scale.
+**Reach for this when**: Fine-tuning any Llama/Qwen/Gemma/Mistral/Phi model on a single GPU (T4, L4, RTX 3090/4090, A100), or multi-GPU on a single node via Accelerate/DeepSpeed (FSDP/DDP). Switch to `ray-distributed-sft` when you need multi-node/large-scale orchestration, or `distributed-grpo` when you need RL alignment at scale.
 
 ## When to Use
 
@@ -28,31 +28,43 @@ Single-GPU fine-tuning with 2x speed and 70% less VRAM via custom Triton kernels
 | Single-GPU fine-tuning (T4, L4, RTX 3090/4090, A100) | ✅ Yes |
 | LoRA/QLoRA parameter-efficient training | ✅ Yes |
 | Quick prototyping before scaling | ✅ Yes |
-| Multi-GPU / multi-node distributed | ❌ Use Ray Train or OpenRLHF |
-| FSDP sharding across GPUs | ❌ Triton kernels incompatible |
+| Multi-GPU (single node) | ✅ Yes (Accelerate/DeepSpeed, FSDP/DDP) |
+| FSDP / DDP sharding across GPUs | ✅ Yes (see multi-GPU docs) |
+| Multi-node / large-scale RL orchestration | ⚠️ Ray Train or OpenRLHF |
 
 ## Installation
 
 ```bash
+# Recommended: uv on Python 3.13
+uv venv --python 3.13
+uv pip install unsloth --torch-backend=auto
+
+# Fallback (pip):
 pip install unsloth
 # or bleeding edge:
 pip install --upgrade --no-cache-dir --no-deps git+https://github.com/unslothai/unsloth.git
 ```
 
-Docs: https://docs.unsloth.ai/get-started/installing-unsloth
+Docs: https://unsloth.ai/docs/get-started/install/pip-install
+
+**Note**: Unsloth now also ships as a native Desktop app and a Studio web UI; this page covers the code-based **Unsloth Core** library.
 
 ## Supported Models (500+)
 
 | Family | Versions | Pre-quantized slug example |
 |--------|----------|---------------------------|
 | Llama | 3, 3.1, 3.2, 3.3, 4 | `unsloth/llama-3.1-8b-instruct-unsloth-bnb-4bit` |
-| Qwen | 3, 3.5, 3.6 | `unsloth/Qwen3-8B-unsloth-bnb-4bit` |
+| Qwen | 3, 3.5, 3.6, 3.8 | `unsloth/Qwen3-8B-unsloth-bnb-4bit` |
 | Gemma | 3, 4 | `unsloth/gemma-3-4b-it-unsloth-bnb-4bit` |
 | Mistral/Ministral | v0.3, Medium 3.5 | `unsloth/Mistral-7B-Instruct-v0.3-bnb-4bit` |
 | Phi | 4 | `unsloth/Phi-4-unsloth-bnb-4bit` |
-| DeepSeek | V3, R1 (MoE) | `unsloth/DeepSeek-R1-0528-Qwen3-8B-bnb-4bit` |
+| DeepSeek | V3, V4, R1 (MoE) | `unsloth/DeepSeek-R1-0528-Qwen3-8B-bnb-4bit` |
+| gpt-oss (MoE) | 20B, 120B | `unsloth/gpt-oss-20b` |
+| GLM | 4.5, 5.x | `unsloth/GLM-4.5-Air` |
 
-Full list: https://huggingface.co/unsloth
+MoE fine-tuning (gpt-oss, DeepSeek, Qwen3-MoE) is supported — Unsloth advertises up to 12x faster MoE training with 35% less VRAM.
+
+Full list: https://unsloth.ai/docs/get-started/unsloth-model-catalog
 
 ## Core API Pattern
 
@@ -283,9 +295,9 @@ model.generate(input_ids=inputs, streamer=TextStreamer(tokenizer, skip_prompt=Tr
 | Qwen3 14B Reasoning | https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Qwen3_(14B)-Reasoning-Conversational.ipynb |
 | Phi-4 Chat | https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Phi_4-Conversational.ipynb |
 
-## Key Limitation
+## Multi-GPU & Scaling
 
-**Single GPU only.** Unsloth's Triton kernels don't support DDP/FSDP. For multi-GPU, see the `ray-distributed-sft` and `distributed-grpo` skills.
+**Multi-GPU is supported** via Accelerate/DeepSpeed with FSDP and DDP — see the [multi-GPU docs](https://unsloth.ai/docs/basics/multi-gpu-training-with-unsloth). For multi-node or large-scale RL orchestration, `ray-distributed-sft` and `distributed-grpo` remain good options.
 
 ## References
 

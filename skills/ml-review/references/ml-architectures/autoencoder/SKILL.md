@@ -188,12 +188,18 @@ def vae_loss(x, x_hat, mu, logvar):
 ```
 
 ```python
-# Keras VAE
+# Keras VAE (Keras 3 API)
+from keras import ops
+
 class Sampling(layers.Layer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.seed_generator = keras.random.SeedGenerator(1337)
+
     def call(self, inputs):
         mu, logvar = inputs
-        eps = keras.backend.random_normal(shape=keras.backend.shape(mu))
-        return mu + keras.backend.exp(0.5 * logvar) * eps
+        eps = keras.random.normal(shape=ops.shape(mu), seed=self.seed_generator)
+        return mu + ops.exp(0.5 * logvar) * eps
 
 encoder_input = keras.Input(shape=(784,))
 x = layers.Dense(400, activation='relu')(encoder_input)

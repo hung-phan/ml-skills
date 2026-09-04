@@ -269,7 +269,12 @@ calibrated.fit(X_train, y_train)
 
 # Isotonic regression (non-parametric, needs more data)
 calibrated = CalibratedClassifierCV(base_estimator, method='isotonic', cv=5)
+
+# scikit-learn 1.8+: native temperature scaling — softmax(logits/T), multi-class
+calibrated = CalibratedClassifierCV(base_estimator, method='temperature', cv=5)
 ```
+
+> **Note**: The manual PyTorch `TemperatureScaling` above is only needed outside sklearn. For sklearn estimators, `CalibratedClassifierCV(estimator, method='temperature')` (scikit-learn 1.8+) does native, multi-class temperature scaling. (`base_estimator` is passed positionally here; the `base_estimator=` keyword was removed in sklearn 1.4 — use `estimator=` if naming it.)
 
 ### Reliability Diagram
 
@@ -442,4 +447,4 @@ with torch.no_grad():
 ## References
 
 - [scikit-learn Model Evaluation](https://scikit-learn.org/stable/modules/model_evaluation.html) — Metrics, scoring, and cross-validation
-- [PyTorch Loss Functions](https://pytorch.org/docs/stable/nn.html#loss-functions) — Complete loss function API reference
+- [PyTorch Loss Functions](https://docs.pytorch.org/docs/stable/nn.html#loss-functions) — Complete loss function API reference
